@@ -46,9 +46,17 @@ export class TreasureCannon extends Scene {
             tower_cone: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
             cannon: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#FFFFFF")}),
+                {ambient: .4, diffusivity: .6, color: hex_color("#FFFFFF")}),            
+            wall_texture: new Material(new defs.Textured_Phong(), {
+                ambient: .2,color: COLORS.blue,
+            }),
+            ground_texture: new Material( new defs.Textured_Phong(), {
+                ambient: .5, color: COLORS.yellow,
+            }),
+            apple_texture: new Material ( new defs.Phong_Shader(), {ambient: .5, diffusivity: .8, color: hex_color("#992828")}),
         }
 
+        this.person_move = 0;
         this.initial_camera_location = Mat4.look_at(vec3(0, 20, 0), vec3(0, 0, 0), vec3(0, 0, 1));
     }
 
@@ -76,20 +84,6 @@ export class TreasureCannon extends Scene {
                 }
             }
         }
-                {ambient: .5, diffusivity: .8, color: hex_color("#992828")}),
-            
-            wall_texture: new Material(new defs.Textured_Phong(), {
-                ambient: .2,color: COLORS.blue,
-            }),
-            ground_texture: new Material( new defs.Textured_Phong(), {
-                ambient: .5, color: COLORS.yellow,
-            }),
-            apple_texture: new Material ( new defs.Phong_Shader(), {ambient: .5, diffusivity: .8, color: hex_color("#992828")}),
-            
-        }
-
-        this.person_move = 0;
-        this.initial_camera_location = Mat4.look_at(vec3(0, 20, 0), vec3(0, 0, 0), vec3(0, 0, 1));
         // Draws background
     }
 
@@ -212,10 +206,6 @@ export class TreasureCannon extends Scene {
             .times(Mat4.rotation(-Math.PI / 2.5, 0, 1, 0))
              .times(Mat4.scale(0.6, 0.6, 4))
         this.shapes.cannon_body.draw(context, program_state, model_transform_cannon_body, this.materials.cannon);
-
-
-        const light_position = vec4(0, 5, 5, 1);
-        program_state.lights = [new Light(light_position, color(1,1,1,1), 1000)];
 
         this.draw_background(context, program_state);
         this.draw_pizza(context,program_state);
