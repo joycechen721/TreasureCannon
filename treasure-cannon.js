@@ -1,4 +1,5 @@
 import {defs, tiny} from './examples/common.js';
+import Person from './objects/Person.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -13,6 +14,7 @@ export class TreasureCannon extends Scene {
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
+            person: new Person(),
         };
 
         // *** Materials
@@ -23,10 +25,14 @@ export class TreasureCannon extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 20, 0), vec3(0, 0, 0), vec3(0, 0, 1));
+
+        this.person_move = 0;
     }
 
     make_control_panel() {
+        this.key_triggered_button("Move left", ["ArrowLeft"], () => {this.person_move += 2})
+        this.key_triggered_button("Move right", ["ArrowRight"], () => {this.person_move -= 2})
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
         this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
@@ -54,7 +60,10 @@ export class TreasureCannon extends Scene {
         let model_transform = Mat4.identity();
 
         const light_position = vec4(0, 5, 5, 1);
-        program_state.lights = [new Light(light_position, sun_color, 1000)];
+        program_state.lights = [new Light(light_position, color(1,1,1,1), 1000)];
+
+        // this.shapes.sphere.draw(context, program_state, model_transform, this.materials.test2)
+        this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0, 1)), this.person_move);
     }
 }
 
