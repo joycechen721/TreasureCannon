@@ -13,13 +13,6 @@ export class TreasureCannon extends Scene {
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
-            sun: new defs.Subdivision_Sphere(4),
-            planet1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
-            planet2: new defs.Subdivision_Sphere(3),
-            planet3: new defs.Subdivision_Sphere(4),
-            planet3_ring: new defs.Torus(30, 30),
-            planet4: new defs.Subdivision_Sphere(4),
-            planet4_moon: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
         };
 
         // *** Materials
@@ -28,22 +21,6 @@ export class TreasureCannon extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             test2: new Material(new Gouraud_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
-            sun: new Material(new defs.Phong_Shader(),
-                {ambient: 1, diffusivity: 1, color: hex_color("#FF2727")}),
-            planet1: new Material(new defs.Phong_Shader(),
-                {ambient: 0, diffusivity: 1, color: hex_color("#808080"), specularity: 0}),
-            planet2_gouraud_shading: new Material(new Gouraud_Shader(),
-                {ambient: 0, diffusivity: 0.15, color: hex_color("#80FFFF"), specularity: 1}),
-            planet2_phong_shading: new Material(new defs.Phong_Shader(),
-                {ambient: 0, diffusivity: 0.15, color: hex_color("#80FFFF"), specularity: 1}),
-            planet3: new Material(new defs.Phong_Shader(),
-                {ambient: 0, diffusivity: 1, color: hex_color("#B08040"), specularity: 1}),
-            planet3_ring: new Material(new Ring_Shader(),
-                {ambient: 1, diffusivity: 0, color: hex_color("#FFBA44"), specularity: 0, smoothness: 0}),
-            planet4: new Material(new defs.Phong_Shader(),
-                {ambient: 0, color: hex_color("#272FFF"), diffusitspecularity: 1}),  
-            planet4_moon: new Material(new defs.Phong_Shader(),
-                {ambient: 0, diffusivity: .7, color: hex_color("#FC27FF"), specularity: 1}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -76,47 +53,8 @@ export class TreasureCannon extends Scene {
         const t = program_state.animation_time / 1000
         let model_transform = Mat4.identity();
 
-        let sun_radius = Math.sin(Math.PI / 10 * 2 * t) + 2
-        let interpolation_factor = (sun_radius - 1) / 2
-        let sun_color = color(1, interpolation_factor, interpolation_factor, 1)
         const light_position = vec4(0, 5, 5, 1);
         program_state.lights = [new Light(light_position, sun_color, 1000)];
-
-        let sun = model_transform
-        sun = sun.times(Mat4.scale(sun_radius, sun_radius, sun_radius))
-        this.shapes.sun.draw(context, program_state, sun, this.materials.sun.override({color: sun_color}))
-
-        let planet_1 = model_transform
-        planet_1 = planet_1.times(Mat4.rotation(t, 0, 1, 0)).times(Mat4.translation(5, 0, 0))
-        this.shapes.planet1.draw(context, program_state, planet_1, this.materials.planet1)
-
-        let planet_2 = model_transform
-        planet_2 = planet_2.times(Mat4.rotation(t/1.5, 0, 1, 0)).times(Mat4.translation(9, 0, 0))
-        this.shapes.planet2.draw(context, program_state, planet_2, t % 2 === 0? this.materials.planet2_gouraud_shading : this.materials.planet2_phong_shading)
-
-        let planet_3 = model_transform
-        planet_3 = planet_3.times(Mat4.rotation(t/3, 0, 1, 0)).times(Mat4.translation(13, 0, 0)).times(Mat4.rotation(t, 1, 0, 0))
-        this.shapes.planet3.draw(context, program_state, planet_3, this.materials.planet3)
-
-        let planet3_ring = planet_3.times(Mat4.scale(3, 3, 0.1))
-        this.shapes.planet3_ring.draw(context, program_state, planet3_ring, this.materials.planet3_ring)
-
-        let planet_4 = model_transform
-        planet_4 = planet_4.times(Mat4.rotation(t/6, 0, 1, 0).times(Mat4.translation(17, 0, 0)))
-        this.shapes.planet4.draw(context, program_state, planet_4, this.materials.planet4)
-
-        let planet4_moon = planet_4
-        planet4_moon = planet4_moon.times(Mat4.rotation(t, 0, 1, 0).times(Mat4.translation(-3, 0, 0)))
-        this.shapes.planet4_moon.draw(context, program_state, planet4_moon, this.materials.planet4_moon)
-
-        if (this.attached != undefined) {
-            this.planet_1 = Mat4.inverse(planet_1.times(Mat4.translation(0, 0, 5)));
-            this.planet_2 = Mat4.inverse(planet_2.times(Mat4.translation(0, 0, 5)));
-            this.planet_3 = Mat4.inverse(planet_3.times(Mat4.translation(0, 0, 5)));
-            this.planet_4 = Mat4.inverse(planet_4.times(Mat4.translation(0, 0, 5)));
-            this.moon = Mat4.inverse(planet4_moon.times(Mat4.translation(0, 0, 5)));
-            program_state.camera_inverse = this.attached().map((x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1));
-        }
     }
 }
 
