@@ -13,6 +13,10 @@ export class TreasureCannon extends Scene {
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
+            tower_body: new defs.Capped_Cylinder(1, 6), 
+            tower_head: new defs.Cube(), 
+            tower_cone: new defs.Rounded_Closed_Cone(2, 8), 
+            cannon_body: new defs.Capped_Cylinder(1, 20), 
         };
 
         // *** Materials
@@ -21,9 +25,43 @@ export class TreasureCannon extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             test2: new Material(new Gouraud_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
+            tower_body: new Material(new defs.Phong_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#939393")}),
+            tower_head: new Material(new defs.Phong_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
+            tower_cone: new Material(new defs.Phong_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
+            cannon: new Material(new defs.Phong_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#FFFFFF")}),
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 20, 0), vec3(0, 0, 0), vec3(0, 0, 1));
+    }
+
+    draw_tower_prongs(context, program_state, model_transform) {
+        for (let i = -2; i < 3; i += 2) {
+            for (let j = -2; j < 3; j += 2) {
+                if (i !== 0 || j !== 0) {
+                    let model_transform_tower_thingy = model_transform
+                        .times(Mat4.translation(i, j, 5))
+                        .times(Mat4.scale(0.5, 0.5, 1.3));
+                    this.shapes.tower_head.draw(context, program_state, model_transform_tower_thingy, this.materials.tower_head);
+                }
+            }
+        }
+    }
+
+    draw_tower_cones(context, program_state, model_transform){
+        for (let i = -2; i < 3; i += 2) {
+            for (let j = -2; j < 3; j += 2) {
+                if (i !== 0 && j !== 0) {
+                    let model_transform_tower_cone = model_transform
+                        .times(Mat4.translation(i, j, 7))
+                        .times(Mat4.scale(1, 1, 0.7)); 
+                    this.shapes.tower_cone.draw(context, program_state, model_transform_tower_cone, this.materials.tower_cone);
+                }
+            }
+        }
     }
 
     make_control_panel() {
@@ -50,11 +88,39 @@ export class TreasureCannon extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
-        const t = program_state.animation_time / 1000
-        let model_transform = Mat4.identity();
+        // TODO: Create Planets (Requirement 1)
+        // this.shapes.[XXX].draw([XXX]) // <--example
 
+        // TODO: Lighting (Requirement 2)
         const light_position = vec4(0, 5, 5, 1);
-        program_state.lights = [new Light(light_position, sun_color, 1000)];
+        // The parameters of the Light are: position, color, size
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+
+        // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
+        const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
+        let model_transform = Mat4.identity();
+        let model_transform_tower_body = model_transform.times(Mat4.scale(2.3, 2.3, 7));
+
+        this.shapes.tower_body.draw(context, program_state, model_transform_tower_body, this.materials.tower_body);
+
+        let model_transform_tower_head = model_transform
+            .times(Mat4.translation(0, 0, 4))
+            .times(Mat4.scale(2.5, 2.5, 1)); 
+        this.shapes.tower_head.draw(context, program_state, model_transform_tower_head, this.materials.tower_head);
+        
+        this.draw_tower_prongs(context, program_state, model_transform); 
+        this.draw_tower_cones(context, program_state, model_transform); 
+
+        let model_transform_cannon_base = model_transform
+            .times(Mat4.translation(0, 0, 6)); 
+        this.shapes.sphere.draw(context, program_state, model_transform_cannon_base, this.materials.cannon);
+
+        let model_transform_cannon_body = model_transform
+            .times(Mat4.translation(-1.5, 0, 6.5))
+            .times(Mat4.rotation(-Math.PI / 2.5, 0, 1, 0))
+             .times(Mat4.scale(0.6, 0.6, 4))
+        this.shapes.cannon_body.draw(context, program_state, model_transform_cannon_body, this.materials.cannon);
+
     }
 }
 
