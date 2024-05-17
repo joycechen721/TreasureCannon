@@ -167,8 +167,6 @@ export class TreasureCannon extends Scene {
             ground_transform,
             this.materials.ground_texture
         );
-
-        this.person_move = 0;
     }
 
     make_control_panel() {
