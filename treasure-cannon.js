@@ -5,6 +5,13 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
+const COLORS = {
+    black: hex_color("#000000"),
+    white: hex_color("#ffffff"),
+    blue: hex_color("#00FFFF"),
+    yellow: hex_color("#FFFF8F"),
+  };
+
 export class TreasureCannon extends Scene {
     constructor() {
         super();
@@ -14,6 +21,11 @@ export class TreasureCannon extends Scene {
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
+            wall: new defs.Square(),
+            ground: new defs.Square(),
+            pizza: new defs.Triangle(),
+            apple: new defs.Subdivision_Sphere(5),
+            bomb: new defs.Subdivision_Sphere(3),
             person: new Person(),
         };
 
@@ -22,6 +34,81 @@ export class TreasureCannon extends Scene {
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             test2: new Material(new Gouraud_Shader(),
+                {ambient: .5, diffusivity: .8, color: hex_color("#992828")}),
+            
+            wall_texture: new Material(new defs.Textured_Phong(), {
+                ambient: .2,color: COLORS.blue,
+            }),
+            ground_texture: new Material( new defs.Textured_Phong(), {
+                ambient: .5, color: COLORS.yellow,
+            }),
+            apple_texture: new Material ( new defs.Phong_Shader(), {ambient: .5, diffusivity: .8, color: hex_color("#992828")}),
+            
+        }
+
+        this.initial_camera_location = Mat4.look_at(vec3(0, 20, 0), vec3(0, 0, 0), vec3(0, 0, 1));
+        // Draws background
+    }
+
+    draw_pizza(context, program_state){
+        let pizza_transform = Mat4.identity()
+        pizza_transform = pizza_transform
+        .times(Mat4.translation(0,5,-5))
+        .times(Mat4.scale(3, 3, 3))
+        .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
+        // Scale appropriately to cover the screen
+        
+        this.shapes.pizza.draw(
+        context,
+        program_state,
+        pizza_transform,
+        this.materials.test2
+        );
+    }
+    draw_apple(context, program_state){
+        let apple_transform = Mat4.identity()
+        apple_transform = apple_transform
+        .times(Mat4.translation(0,5,-5))
+        .times(Mat4.scale(.5, .5, .5))
+        .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
+        // Scale appropriately to cover the screen
+        
+        this.shapes.apple.draw(
+        context,
+        program_state,
+        apple_transform,
+        this.materials.apple_texture,
+        );
+
+    }
+
+    draw_background(context, program_state) {
+        // WALL
+        let wall_transform = Mat4.identity()
+        wall_transform = wall_transform
+        .times(Mat4.scale(20, 20, 20))
+        .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0));
+        // Scale appropriately to cover the screen
+        
+        this.shapes.wall.draw(
+        context,
+        program_state,
+        wall_transform,
+        this.materials.wall_texture
+        );
+
+        // GROUND
+        let ground_transform = Mat4.identity();
+        ground_transform = ground_transform
+        .times(Mat4.translation(0, 1, -14))
+        .times(Mat4.scale(23, 1, 10))
+        .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0));
+        this.shapes.ground.draw(
+        context,
+        program_state,
+        ground_transform,
+        this.materials.ground_texture
+        );
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
         }
 
@@ -60,6 +147,12 @@ export class TreasureCannon extends Scene {
         let model_transform = Mat4.identity();
 
         const light_position = vec4(0, 5, 5, 1);
+        program_state.lights = [new Light(light_position, color(1,1,1,1), 1000)];
+
+        this.draw_background(context, program_state);
+        this.draw_pizza(context,program_state);
+
+        this.draw_apple(context,program_state);
         program_state.lights = [new Light(light_position, color(1,1,1,1), 1000)];
 
         // this.shapes.sphere.draw(context, program_state, model_transform, this.materials.test2)
