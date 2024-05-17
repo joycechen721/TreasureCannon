@@ -4,19 +4,15 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
-export class Assignment3 extends Scene {
+export class TreasureCannon extends Scene {
     constructor() {
-        // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
 
-        // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
             torus: new defs.Torus(15, 15),
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
-            // TODO:  Fill in as many additional shape instances as needed in this key/value table.
-            //        (Requirement 1)
             sun: new defs.Subdivision_Sphere(4),
             planet1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             planet2: new defs.Subdivision_Sphere(3),
@@ -32,12 +28,6 @@ export class Assignment3 extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             test2: new Material(new Gouraud_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
-            // TODO:  Fill in as many additional material objects as needed in this key/value table.
-            //        (Requirement 4)
-
-            //ambient is 0 for all planets
-            //max specular for planet 2, 3, high specular for planet 4
-            //diffuse only for planet 1, low for 2, max for 3
             sun: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 1, color: hex_color("#FF2727")}),
             planet1: new Material(new defs.Phong_Shader(),
@@ -60,7 +50,6 @@ export class Assignment3 extends Scene {
     }
 
     make_control_panel() {
-        // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
         this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
@@ -84,59 +73,48 @@ export class Assignment3 extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
-        // TODO: Create Planets (Requirement 1)
-        // this.shapes.[XXX].draw([XXX]) // <--example
         const t = program_state.animation_time / 1000
         let model_transform = Mat4.identity();
 
-        // TODO: Lighting (Requirement 2)
-        //sun's color: fades from red when it's smallest, then to white when it's biggest
         let sun_radius = Math.sin(Math.PI / 10 * 2 * t) + 2
         let interpolation_factor = (sun_radius - 1) / 2
         let sun_color = color(1, interpolation_factor, interpolation_factor, 1)
         const light_position = vec4(0, 5, 5, 1);
-        // The parameters of the Light are: position, color, size
         program_state.lights = [new Light(light_position, sun_color, 1000)];
 
-        //sun: swells from radius 1 up to 3 and then shrink from 3 to 1 over a 10 second period; and fades from red when it's smallest, then to white when it's biggest
         let sun = model_transform
         sun = sun.times(Mat4.scale(sun_radius, sun_radius, sun_radius))
         this.shapes.sun.draw(context, program_state, sun, this.materials.sun.override({color: sun_color}))
 
-        //Place four orbiting planets. Their radius shall all be 1. The smallest orbit shall be 5 units away from the sun and each orbit after shall be 4 units farther, with each farther planet revolving at a slower rate than the previous. (It’s fine if two planets overlap with each other at some seconds)
-        // planet 1
         let planet_1 = model_transform
         planet_1 = planet_1.times(Mat4.rotation(t, 0, 1, 0)).times(Mat4.translation(5, 0, 0))
         this.shapes.planet1.draw(context, program_state, planet_1, this.materials.planet1)
-        //planet 2
+
         let planet_2 = model_transform
         planet_2 = planet_2.times(Mat4.rotation(t/1.5, 0, 1, 0)).times(Mat4.translation(9, 0, 0))
         this.shapes.planet2.draw(context, program_state, planet_2, t % 2 === 0? this.materials.planet2_gouraud_shading : this.materials.planet2_phong_shading)
-        //planet 3
+
         let planet_3 = model_transform
         planet_3 = planet_3.times(Mat4.rotation(t/3, 0, 1, 0)).times(Mat4.translation(13, 0, 0)).times(Mat4.rotation(t, 1, 0, 0))
         this.shapes.planet3.draw(context, program_state, planet_3, this.materials.planet3)
-        //planet 3's ring
+
         let planet3_ring = planet_3.times(Mat4.scale(3, 3, 0.1))
         this.shapes.planet3_ring.draw(context, program_state, planet3_ring, this.materials.planet3_ring)
-        //planet 4
+
         let planet_4 = model_transform
         planet_4 = planet_4.times(Mat4.rotation(t/6, 0, 1, 0).times(Mat4.translation(17, 0, 0)))
         this.shapes.planet4.draw(context, program_state, planet_4, this.materials.planet4)
-        //planet 4's moon
+
         let planet4_moon = planet_4
         planet4_moon = planet4_moon.times(Mat4.rotation(t, 0, 1, 0).times(Mat4.translation(-3, 0, 0)))
         this.shapes.planet4_moon.draw(context, program_state, planet4_moon, this.materials.planet4_moon)
 
-        // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
         if (this.attached != undefined) {
-            //translating returned value by 5 units to back away from planet, and then inverting matrix
             this.planet_1 = Mat4.inverse(planet_1.times(Mat4.translation(0, 0, 5)));
             this.planet_2 = Mat4.inverse(planet_2.times(Mat4.translation(0, 0, 5)));
             this.planet_3 = Mat4.inverse(planet_3.times(Mat4.translation(0, 0, 5)));
             this.planet_4 = Mat4.inverse(planet_4.times(Mat4.translation(0, 0, 5)));
             this.moon = Mat4.inverse(planet4_moon.times(Mat4.translation(0, 0, 5)));
-            //blend desired with the existing camera matrix from the previous frame to smoothly pull the camera towards equaling can use instead of immediately getting there
             program_state.camera_inverse = this.attached().map((x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1));
         }
     }
