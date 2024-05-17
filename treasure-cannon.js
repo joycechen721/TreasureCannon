@@ -46,6 +46,7 @@ export class TreasureCannon extends Scene {
             
         }
 
+        this.person_move = 0;
         this.initial_camera_location = Mat4.look_at(vec3(0, 20, 0), vec3(0, 0, 0), vec3(0, 0, 1));
         // Draws background
     }
@@ -104,17 +105,11 @@ export class TreasureCannon extends Scene {
         .times(Mat4.scale(23, 1, 10))
         .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0));
         this.shapes.ground.draw(
-        context,
-        program_state,
-        ground_transform,
-        this.materials.ground_texture
+            context,
+            program_state,
+            ground_transform,
+            this.materials.ground_texture
         );
-                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
-        }
-
-        this.initial_camera_location = Mat4.look_at(vec3(0, 20, 0), vec3(0, 0, 0), vec3(0, 0, 1));
-
-        this.person_move = 0;
     }
 
     make_control_panel() {
