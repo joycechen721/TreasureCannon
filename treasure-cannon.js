@@ -1,4 +1,5 @@
 import {defs, tiny} from './examples/common.js';
+import Person from './objects/Person.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -25,6 +26,7 @@ export class TreasureCannon extends Scene {
             pizza: new defs.Triangle(),
             apple: new defs.Subdivision_Sphere(5),
             bomb: new defs.Subdivision_Sphere(3),
+            person: new Person(),
         };
 
         // *** Materials
@@ -84,8 +86,10 @@ export class TreasureCannon extends Scene {
         // WALL
         let wall_transform = Mat4.identity()
         wall_transform = wall_transform
+        .times(Mat4.translation(0,-5,0))
         .times(Mat4.scale(20, 20, 20))
-        .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0));
+        .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0))
+       ;
         // Scale appropriately to cover the screen
         
         this.shapes.wall.draw(
@@ -107,9 +111,13 @@ export class TreasureCannon extends Scene {
         ground_transform,
         this.materials.ground_texture
         );
+
+        this.person_move = 0;
     }
 
     make_control_panel() {
+        this.key_triggered_button("Move left", ["ArrowLeft"], () => {this.person_move += 2})
+        this.key_triggered_button("Move right", ["ArrowRight"], () => {this.person_move -= 2})
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
         this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
@@ -143,6 +151,8 @@ export class TreasureCannon extends Scene {
         this.draw_pizza(context,program_state);
 
         this.draw_apple(context,program_state);
+        // this.shapes.sphere.draw(context, program_state, model_transform, this.materials.test2)
+        this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0, 1)), this.person_move);
     }
 }
 
