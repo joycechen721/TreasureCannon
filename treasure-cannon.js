@@ -10,8 +10,10 @@ const COLORS = {
     white: hex_color("#ffffff"),
     blue: hex_color("#00FFFF"),
     yellow: hex_color("#FFFF8F"),
+    green: hex_color("#50C878"),
   };
 
+  
 export class TreasureCannon extends Scene {
     constructor() {
         super();
@@ -25,6 +27,7 @@ export class TreasureCannon extends Scene {
             ground: new defs.Square(),
             pizza: new defs.Triangle(),
             apple: new defs.Subdivision_Sphere(5),
+            apple_stem: new defs.Cylindrical_Tube(1, 10, [[0, 2], [0, 1]]),
             bomb: new defs.Subdivision_Sphere(3),
             person: new Person(),
         };
@@ -43,9 +46,11 @@ export class TreasureCannon extends Scene {
                 ambient: .5, color: COLORS.yellow,
             }),
             apple_texture: new Material ( new defs.Phong_Shader(), {ambient: .5, diffusivity: .8, color: hex_color("#992828")}),
+            apple_stem_texture: new Material ( new defs.Phong_Shader(), {ambient: .5, diffusivity: .8, color: COLORS.green}),
             
         }
 
+        this.person_move = 0;
         this.initial_camera_location = Mat4.look_at(vec3(0, 20, 0), vec3(0, 0, 0), vec3(0, 0, 1));
         // Draws background
     }
@@ -53,8 +58,8 @@ export class TreasureCannon extends Scene {
     draw_pizza(context, program_state){
         let pizza_transform = Mat4.identity()
         pizza_transform = pizza_transform
-        .times(Mat4.translation(0,5,-5))
-        .times(Mat4.scale(3, 3, 3))
+        .times(Mat4.translation(0,3,-2))
+        .times(Mat4.scale(2, 2, 2))
         .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
         // Scale appropriately to cover the screen
         
@@ -68,7 +73,7 @@ export class TreasureCannon extends Scene {
     draw_apple(context, program_state){
         let apple_transform = Mat4.identity()
         apple_transform = apple_transform
-        .times(Mat4.translation(0,5,-5))
+        .times(Mat4.translation(0,2.5,-1))
         .times(Mat4.scale(.5, .5, .5))
         .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
         // Scale appropriately to cover the screen
@@ -80,13 +85,27 @@ export class TreasureCannon extends Scene {
         this.materials.apple_texture,
         );
 
+        let apple_stem_transform = Mat4.identity()
+        apple_stem_transform =apple_transform
+        .times(Mat4.translation(0,1,0))
+        .times(Mat4.scale(.2, .8, .1))
+        .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
+
+        this.shapes.apple_stem.draw(
+            context,
+            program_state,
+            apple_stem_transform,
+            this.materials.apple_stem_texture,
+            );
+    
+
     }
 
     draw_background(context, program_state) {
         // WALL
         let wall_transform = Mat4.identity()
         wall_transform = wall_transform
-        .times(Mat4.translation(0,-5,0))
+        .times(Mat4.translation(0,-.2,0))
         .times(Mat4.scale(20, 20, 20))
         .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0))
        ;
@@ -102,14 +121,14 @@ export class TreasureCannon extends Scene {
         // GROUND
         let ground_transform = Mat4.identity();
         ground_transform = ground_transform
-        .times(Mat4.translation(0, 1, -14))
-        .times(Mat4.scale(23, 1, 10))
+        .times(Mat4.translation(0, 0, -14))
+        .times(Mat4.scale(20, 1, 10))
         .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0));
         this.shapes.ground.draw(
-        context,
-        program_state,
-        ground_transform,
-        this.materials.ground_texture
+            context,
+            program_state,
+            ground_transform,
+            this.materials.ground_texture
         );
 
         this.person_move = 0;
@@ -148,10 +167,10 @@ export class TreasureCannon extends Scene {
         program_state.lights = [new Light(light_position, color(1,1,1,1), 1000)];
 
         this.draw_background(context, program_state);
-        this.draw_pizza(context,program_state);
 
         this.draw_apple(context,program_state);
-        // this.shapes.sphere.draw(context, program_state, model_transform, this.materials.test2)
+        program_state.lights = [new Light(light_position, color(1,1,1,1), 1000)];
+        
         this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0, 1)), this.person_move);
     }
 }

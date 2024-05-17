@@ -32,7 +32,7 @@ export default class Person extends Object {
 
     render(context, program_state, model_transform=Mat4.identity(), move_amt=0) {
         const head_transform = model_transform
-            .times(Mat4.scale(0.6, 0.6, 0.6)).times(Mat4.translation(move_amt, 0, -10))
+            .times(Mat4.scale(0.6, 0.6, 0.6)).times(Mat4.translation(move_amt, 4, -8))
         const basket_transform = head_transform
             .times(Mat4.translation(0, 0, 1.5))
         const basket_transform2 = basket_transform
