@@ -1,5 +1,6 @@
 import {defs, tiny} from './examples/common.js';
 import Person from './objects/Person.js';
+import StartScreen from './objects/StartScreen.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -34,6 +35,7 @@ export class TreasureCannon extends Scene {
             apple_stem: new defs.Cylindrical_Tube(1, 10, [[0, 2], [0, 1]]),
             bomb: new defs.Subdivision_Sphere(3),
             person: new Person(),
+            start_screen: new StartScreen(),
         };
 
         // *** Materials
@@ -234,12 +236,12 @@ export class TreasureCannon extends Scene {
         program_state.lights = [new Light(light_position, color(1,1,1,1), 1000)];
         
         this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0, 1)), this.person_move);
+        this.shapes.start_screen.render(context, program_state, model_transform);
     }
 }
 
 class Gouraud_Shader extends Shader {
     // This is a Shader using Phong_Shader as template
-    // TODO: Modify the glsl coder here to create a Gouraud Shader (Planet 2)
 
     constructor(num_lights = 2) {
         super();
