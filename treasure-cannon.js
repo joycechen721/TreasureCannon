@@ -58,12 +58,12 @@ export class TreasureCannon extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             test2: new Material(new Gouraud_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
-            tower_body: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#939393")}),
-            tower_head: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
-            tower_cone: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
+            tower_body: new Material(new defs.Textured_Phong(),
+                {ambient: .5, diffusivity: 1, color: hex_color("#73736B"), texture: new Texture(PATHS.brick_wall)}),
+            tower_head: new Material(new defs.Textured_Phong(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#992828"), texture: new Texture(PATHS.brick_wall)}),
+            tower_cone: new Material(new defs.Textured_Phong(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#992828"), texture: new Texture(PATHS.brick_wall)}),
             cannon: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#FFFFFF")}),            
             wall_texture: new Material(new defs.Textured_Phong(), {
@@ -332,7 +332,7 @@ export class TreasureCannon extends Scene {
         // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         let model_transform = Mat4.identity();
-        let tower_transform = model_transform.times(Mat4.translation(12, 3, -2))
+        let tower_transform = model_transform.times(Mat4.translation(12, 3, -3))
         let model_transform_tower_body = tower_transform.times(Mat4.scale(2.3, 2.3, 11.9));
 
         this.shapes.tower_body.draw(context, program_state, model_transform_tower_body, this.materials.tower_body);
