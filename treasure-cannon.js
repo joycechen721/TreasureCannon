@@ -57,9 +57,9 @@ export class TreasureCannon extends Scene {
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
+                {ambient: 1, diffusivity: 1, color: hex_color("#992828")}),
             test2: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
+                {ambient: 1, diffusivity: 1, color: hex_color("#992828")}),
             tower_body: new Material(new defs.Textured_Phong(),
                 {ambient: .5, diffusivity: 1, color: hex_color("#73736B"), texture: new Texture(PATHS.brick_wall)}),
             tower_head: new Material(new defs.Textured_Phong(),
@@ -68,15 +68,14 @@ export class TreasureCannon extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828"), texture: new Texture(PATHS.brick_wall)}),
             cannon: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#FFFFFF")}),            
-                {ambient: 1, diffusivity: 1, color: hex_color("#992828")}),
             
             wall_texture: new Material(new defs.Textured_Phong(), {
-                ambient: .5, diffusivity: .8,color: COLORS.blue, texture: new Texture(PATHS.sky),
+                ambient: 1, texture: new Texture(PATHS.sky),
             }),
             side_wall_texture: new Material(new defs.Textured_Phong(), {
-                ambient: .5, diffusivity: .8, color: COLORS.blue, texture: new Texture(PATHS.sky)}),
+                ambient: 1, texture: new Texture(PATHS.sky)}),
             ground_texture: new Material( new defs.Textured_Phong(), {
-                ambient: .5, color: COLORS.yellow, texture: new Texture(PATHS.sand),
+                ambient: 1, texture: new Texture(PATHS.sand),
             }),
             apple_texture: new Material ( new defs.Phong_Shader(), {ambient: 1, color: hex_color("#992828")}),
             apple_stem_texture: new Material ( new defs.Phong_Shader(), {ambient: .9, diffusivity: .8, color: COLORS.green}),
