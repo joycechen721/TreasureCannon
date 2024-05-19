@@ -1,9 +1,11 @@
 import {defs, tiny} from './examples/common.js';
 import Person from './objects/Person.js';
+import Cloud from  './objects/Cloud.js';
+import Tree from  './objects/Tree.js';
 import StartScreen from './objects/StartScreen.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
 
 const COLORS = {
@@ -14,6 +16,14 @@ const COLORS = {
     green: hex_color("#50C878"),
   };
 
+  const PATHS = {
+    brick_wall: "assets/brick-wall.jpeg",
+    sand: "assets/sand.png",
+    sky: "assets/sky.png",
+  };
+
+
+  
   
 export class TreasureCannon extends Scene {
     constructor() {
@@ -28,13 +38,17 @@ export class TreasureCannon extends Scene {
             tower_head: new defs.Cube(), 
             tower_cone: new defs.Rounded_Closed_Cone(2, 8), 
             cannon_body: new defs.Capped_Cylinder(1, 20), 
-            wall: new defs.Square(),
+            wall1: new defs.Square(),
+            wall2: new defs.Square(),
             ground: new defs.Square(),
             pizza: new defs.Triangle(),
             apple: new defs.Subdivision_Sphere(5),
             apple_stem: new defs.Cylindrical_Tube(1, 10, [[0, 2], [0, 1]]),
             bomb: new defs.Subdivision_Sphere(3),
             person: new Person(),
+            side_walls: new defs.Square(),
+            cloud: new Cloud(),
+            tree: new Tree(),
             start_screen: new StartScreen(),
         };
 
@@ -53,18 +67,24 @@ export class TreasureCannon extends Scene {
             cannon: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#FFFFFF")}),            
             wall_texture: new Material(new defs.Textured_Phong(), {
-                ambient: .2,color: COLORS.blue,
+                ambient: .5,color: COLORS.blue, texture: new Texture(PATHS.sky),
             }),
+            side_wall_texture: new Material(new defs.Textured_Phong(), {
+                ambient: .5, diffusivity: .8, color: COLORS.blue, texture: new Texture(PATHS.sky)}),
             ground_texture: new Material( new defs.Textured_Phong(), {
-                ambient: .5, color: COLORS.yellow,
+                ambient: .5, color: COLORS.yellow, texture: new Texture(PATHS.sand),
             }),
-            apple_texture: new Material ( new defs.Phong_Shader(), {ambient: .5, diffusivity: .8, color: hex_color("#992828")}),
+            apple_texture: new Material ( new defs.Phong_Shader(), {ambient: 1, color: hex_color("#992828")}),
             apple_stem_texture: new Material ( new defs.Phong_Shader(), {ambient: .5, diffusivity: .8, color: COLORS.green}),
             
         }
 
+        this.apple_y_position = 0; // initial y position of the apple
+        this.apple_exists = true;
+        this.apple_transform = Mat4.identity();
+
         this.person_move = 0;
-        this.initial_camera_location = Mat4.look_at(vec3(0, 20, 0), vec3(0, 0, 0), vec3(0, 0, 1));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 30, 0), vec3(0, 0, 0), vec3(0, 0, 1));
     }
 
     draw_tower_prongs(context, program_state, model_transform) {
@@ -108,11 +128,19 @@ export class TreasureCannon extends Scene {
         pizza_transform,
         this.materials.test2
         );
+
+        this.objects.push({
+            transform: pizza_transform,
+        });
     }
     draw_apple(context, program_state){
+        // if (!this.apple_exists) return;
+
+        const t = program_state.animation_time / 1000
+        // const y_position = this.apple_y_position + Math.sin(t) * 10;
         let apple_transform = Mat4.identity()
         apple_transform = apple_transform
-        .times(Mat4.translation(0,2.5,-1))
+        .times(Mat4.translation(0,2.5,this.apple_y_position + Math.sin(t*3) * 5))
         .times(Mat4.scale(.5, .5, .5))
         .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
         // Scale appropriately to cover the screen
@@ -136,21 +164,22 @@ export class TreasureCannon extends Scene {
             apple_stem_transform,
             this.materials.apple_stem_texture,
             );
-    
 
+       this.apple_transform = apple_transform;
+    
     }
 
     draw_background(context, program_state) {
         // WALL
         let wall_transform = Mat4.identity()
         wall_transform = wall_transform
-        .times(Mat4.translation(0,-.2,0))
+        .times(Mat4.translation(0,-10,5))
         .times(Mat4.scale(20, 20, 20))
         .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0))
        ;
         // Scale appropriately to cover the screen
         
-        this.shapes.wall.draw(
+        this.shapes.wall2.draw(
         context,
         program_state,
         wall_transform,
@@ -160,7 +189,9 @@ export class TreasureCannon extends Scene {
         // GROUND
         let ground_transform = Mat4.identity();
         ground_transform = ground_transform
-        .times(Mat4.translation(0, 0, -14))
+        .times(Mat4.translation(0, -2, -9))
+        .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0))
+      
         .times(Mat4.scale(20, 1, 10))
         .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0));
         this.shapes.ground.draw(
@@ -169,7 +200,85 @@ export class TreasureCannon extends Scene {
             ground_transform,
             this.materials.ground_texture
         );
+
+        // right
+        let side_transform = Mat4.identity();
+
+        let right_side_transform = side_transform
+        .times(Mat4.translation(-20,0, 5))
+        .times(Mat4.scale(20, 20, 20))
+        .times(Mat4.rotation((3 * Math.PI) / 2, 0, 1, 0));
+        this.shapes.side_walls.draw(
+        context,
+        program_state,
+        right_side_transform,
+        this.materials.side_wall_texture
+        );
+
+        // left
+        let left_side_transform = side_transform
+        .times(Mat4.translation(20,0, 5))
+        .times(Mat4.scale(20, 20, 20))
+        .times(Mat4.rotation((3 * Math.PI) / 2, 0, 1, 0));
+        this.shapes.side_walls.draw(
+        context,
+        program_state,
+        left_side_transform,
+        this.materials.side_wall_texture
+        ); 
     }
+
+    draw_clouds_and_trees (context, program_state, t){
+        let model_transform = Mat4.identity();
+        this.shapes.cloud.render(context, program_state, model_transform.times(Mat4.translation(-8-Math.sin(t/6) * 6,3,10).times(Mat4.scale(1.5, 0.5, .5))));
+        this.shapes.cloud.render(context, program_state, model_transform.times(Mat4.translation(4+Math.sin(t/6) * 6,6,8)).times(Mat4.scale(1.5, 0.5, .5)));
+        this.shapes.cloud.render(context, program_state, model_transform.times(Mat4.translation(-Math.sin(t/6) * 8,4,7)).times(Mat4.scale(1, 0.5, .5)));
+        this.shapes.cloud.render(context, program_state, model_transform.times(Mat4.translation(-4+ Math.sin(t/6) * 6,5,6)).times(Mat4.scale(1.4, 0.5, .4)));
+        this.shapes.cloud.render(context, program_state, model_transform.times(Mat4.translation(2 -Math.sin(t/6) * 6,8,10)).times(Mat4.scale(1, 0.3, .4)));
+        this.shapes.cloud.render(context, program_state, model_transform.times(Mat4.translation(-7+ Math.sin(t/6) * 6,4,9)).times(Mat4.scale(1, 0.3, .3)));
+        this.shapes.cloud.render(context, program_state, model_transform.times(Mat4.translation(4- Math.sin(t/6) * 6,5,8)).times(Mat4.scale(1, 0.4, .2)));
+
+        let tree_transform = model_transform;
+        this.shapes.tree.render(context, program_state, tree_transform);
+        for (let i = 0; i < 5; i+=1) {
+            tree_transform = tree_transform
+                .times(Mat4.translation(7, 0, 0));  
+            this.shapes.tree.render(context, program_state, tree_transform);
+        }
+        tree_transform = tree_transform.times(Mat4.translation(-3,4,0));
+
+        this.shapes.tree.render(context, program_state, tree_transform);
+        for (let i = 0; i < 4; i+=1) {
+            tree_transform = tree_transform
+                .times(Mat4.translation(-7, 0, 0)); 
+            this.shapes.tree.render(context, program_state, tree_transform);
+        }
+
+        tree_transform = tree_transform.times(Mat4.translation(-2, -3, 0));
+        for (let i = 0; i < 2; i+=1) {
+            tree_transform = tree_transform
+                .times(Mat4.translation(0, 6, 0)); 
+            this.shapes.tree.render(context, program_state, tree_transform);
+        }
+
+        tree_transform = tree_transform.times(Mat4.translation(32, -12, 0));
+        for (let i = 0; i < 2; i+=1) {
+            tree_transform = tree_transform
+                .times(Mat4.translation(0, 6, 0)); 
+            this.shapes.tree.render(context, program_state, tree_transform);
+        }
+    }
+
+    check_collision(bounding_box1, bounding_box2) {
+        const collision = !(bounding_box1.max[0] < bounding_box2.min[0] || bounding_box1.min[0] > bounding_box2.max[0] ||
+            bounding_box1.max[1] < bounding_box2.min[1] || bounding_box1.min[1] > bounding_box2.max[1] ||
+            bounding_box1.max[2] < bounding_box2.min[2] || bounding_box1.min[2] > bounding_box2.max[2]);
+        if (collision) {
+            console.log("Collision detected");
+        }
+        return collision;
+    }
+    
 
     make_control_panel() {
         this.key_triggered_button("Move left", ["ArrowLeft"], () => {this.person_move += 2})
@@ -188,6 +297,7 @@ export class TreasureCannon extends Scene {
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
+        console.log("Display method called");
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
@@ -201,9 +311,9 @@ export class TreasureCannon extends Scene {
         // this.shapes.[XXX].draw([XXX]) // <--example
 
         // TODO: Lighting (Requirement 2)
-        const light_position = vec4(0, 5, 5, 1);
+        const light_position = vec4(0, 10, 20, 1);
         // The parameters of the Light are: position, color, size
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 100)];
 
         // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
@@ -231,11 +341,33 @@ export class TreasureCannon extends Scene {
         this.shapes.cannon_body.draw(context, program_state, model_transform_cannon_body, this.materials.cannon);
 
         this.draw_background(context, program_state);
-
-        this.draw_apple(context,program_state);
         program_state.lights = [new Light(light_position, color(1,1,1,1), 1000)];
-        
+
+        let person_transform = model_transform.times(Mat4.translation(0, 0, 1))
+            .times(Mat4.scale(0.6, 0.6, 0.6)).times(Mat4.translation(this.person_move, 4, -8))
+            .times(Mat4.translation(0, 0, 1.5))
+            .times(Mat4.scale(1.2, 1.2, 0.5)).times(Mat4.translation(0, 0, 0.4));
+
+        if (this.apple_exists) {
+            this.draw_apple(context, program_state);
+        }
+
+        if (this.apple_exists && this.check_collision(
+            {
+                min: vec3(person_transform[0][3] - .05, person_transform[1][3] - .05, person_transform[2][3] - .04),
+                max: vec3(person_transform[0][3] + .05, person_transform[1][3] + .05, person_transform[2][3] + .04)
+            },
+            {
+                min: vec3(this.apple_transform[0][3] - .05, this.apple_transform[1][3] - .05, this.apple_transform[2][3] - .04),
+                max: vec3(this.apple_transform[0][3] + 0.05, this.apple_transform[1][3] + 0.05, this.apple_transform[2][3]+.03)
+            }
+        )) {
+            this.apple_exists = false;
+
+    }
         this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0, 1)), this.person_move);
+        this.draw_clouds_and_trees (context, program_state, t);
+
         this.shapes.start_screen.render(context, program_state, model_transform);
     }
 }

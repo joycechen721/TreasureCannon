@@ -18,7 +18,7 @@ export default class Person extends Object {
 
         this.materials = {
             basket: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#977946")}),
+                {ambient: .4, diffusivity: .6, color: hex_color("#000000")}),
             head: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#FFFFFF")}),
             body: new Material(new defs.Phong_Shader(),
@@ -32,7 +32,7 @@ export default class Person extends Object {
 
     render(context, program_state, model_transform=Mat4.identity(), move_amt=0) {
         const head_transform = model_transform
-            .times(Mat4.scale(0.6, 0.6, 0.6)).times(Mat4.translation(move_amt, 4, -8))
+            .times(Mat4.scale(0.6, 0.6, 0.6)).times(Mat4.translation(move_amt, 4, -11))
         const basket_transform = head_transform
             .times(Mat4.translation(0, 0, 1.5))
         const basket_transform2 = basket_transform
