@@ -80,10 +80,11 @@ export class TreasureCannon extends Scene {
         }
 
         this.apple_y_position = 0; // initial y position of the apple
-        this.apple_exists = true;
+        this.apple_exists = false;
         this.apple_transform = Mat4.identity();
 
         this.person_move = 0;
+        this.start_game = false;
         this.initial_camera_location = Mat4.look_at(vec3(0, 30, 0), vec3(0, 0, 0), vec3(0, 0, 1));
     }
 
@@ -278,9 +279,20 @@ export class TreasureCannon extends Scene {
         }
         return collision;
     }
-    
 
     make_control_panel() {
+        this.key_triggered_button("Start/Stop Game", ["t"], () =>
+            {
+                if (this.start_game){
+                    this.start_game = false
+                    this.apple_exists = false
+                }
+                else {
+                    this.start_game = true
+                    this.apple_exists = true
+                }
+            }
+          );
         this.key_triggered_button("Move left", ["ArrowLeft"], () => {this.person_move += 2})
         this.key_triggered_button("Move right", ["ArrowRight"], () => {this.person_move -= 2})
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
@@ -299,7 +311,9 @@ export class TreasureCannon extends Scene {
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         console.log("Display method called");
         if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+            if (this.start_game) {
+                this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+            }
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(this.initial_camera_location);
         }
@@ -368,7 +382,9 @@ export class TreasureCannon extends Scene {
         this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0, 1)), this.person_move);
         this.draw_clouds_and_trees (context, program_state, t);
 
-        this.shapes.start_screen.render(context, program_state, model_transform);
+        if (!this.start_game){
+            this.shapes.start_screen.render(context, program_state, model_transform);
+        }
     }
 }
 
