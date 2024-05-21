@@ -417,10 +417,26 @@ export class TreasureCannon extends Scene {
             .times(Mat4.translation(0, 0, 7)); 
         this.shapes.sphere.draw(context, program_state, model_transform_cannon_base, this.materials.cannon);
 
+        var max_angle = 0.3 * Math.PI;
+        var theta = max_angle / 2 + (max_angle / 2) * Math.sin((Math.PI * t));
+        
+        //initial cannon position
         let model_transform_cannon_body = tower_transform
-            .times(Mat4.translation(-1.5, 0, 7.5))
-            .times(Mat4.rotation(-Math.PI / 2.5, 0, 1, 0))
-             .times(Mat4.scale(0.6, 0.6, 4))
+            .times(Mat4.translation(-1.5, 0, 7.5)) 
+            .times(Mat4.rotation(-Math.PI / 2.5, 0, 1, 0)) 
+            .times(Mat4.scale(0.6, 0.6, 4));
+        
+
+        //rotating the cannon body 
+        if(this.start_game){    
+            model_transform_cannon_body = model_transform_cannon_body
+                .times(Mat4.scale(1/0.6, 1/0.6, 1/4.0))
+                .times(Mat4.translation(0, 0, -1.5)) 
+                .times(Mat4.rotation(theta, 0, 1, 0)) 
+                .times(Mat4.translation(0, 0, 1.5))
+                .times(Mat4.scale(0.6, 0.6, 4)); 
+        }
+        
         this.shapes.cannon_body.draw(context, program_state, model_transform_cannon_body, this.materials.cannon);
 
         this.draw_background(context, program_state);
