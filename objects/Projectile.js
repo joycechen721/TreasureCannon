@@ -4,6 +4,15 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
+
+const COLORS = {
+    black: hex_color("#000000"),
+    white: hex_color("#ffffff"),
+    blue: hex_color("#00FFFF"),
+    yellow: hex_color("#FFFF8F"),
+    green: hex_color("#50C878"),
+  };
+
 export default class Projectile {
     constructor(type, position, initial_velocity, theta, launch_time) {
         this.type = type;
@@ -26,7 +35,7 @@ export default class Projectile {
             apple_texture: new Material ( new defs.Phong_Shader(), {ambient: 1, color: hex_color("#992828")}),
             apple_stem_texture: new Material ( new defs.Phong_Shader(), {ambient: .9, diffusivity: .8, color: COLORS.green}),
             pizza_texture: new Material ( new defs.Phong_Shader(), {ambient: .9, color: COLORS.yellow}),
-            test2: new Material(new Gouraud_Shader(),
+            test2: new Material(new defs.Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#992828")}),
         }
     }
@@ -42,7 +51,7 @@ export default class Projectile {
             .times(Mat4.translation(0,2.5,Math.sin(t*3) * 5))
             .times(Mat4.scale(.5, .5, .5))
             .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0))
-            .times(Mat4.translation(0, -this.v_x, this.v_y));
+            .times(Mat4.translation(-this.v_x, 0, this.v_y));
         // Scale appropriately to cover the screen
         }
         else {
@@ -50,7 +59,7 @@ export default class Projectile {
                 .times(Mat4.translation(-5,2.5,this.bomb_z_position + Math.sin(t*3) * 5))
                 .times(Mat4.scale(.5, .5, .5))
                 .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0))
-                .times(Mat4.translation(0, -this.v_x, this.v_y));
+                .times(Mat4.translation(-this.v_x, 0, this.v_y));
         }
 
         if (!is_bomb){
@@ -75,7 +84,7 @@ export default class Projectile {
             .times(Mat4.translation(0,1,0))
             .times(Mat4.scale(.2, .8, .1))
             .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0))
-            .times(Mat4.translation(0, -this.v_x, this.v_y));
+            .times(Mat4.translation(-this.v_x, 0, this.v_y));
 
         if (!is_bomb){
 

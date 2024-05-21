@@ -349,6 +349,7 @@ export class TreasureCannon extends Scene {
         //current time
         let launch_time = t; 
         
+        //testing
         this.projectiles.push(new Projectile("apple", position, initial_velocity,  launch_angle, launch_time));
     }
 
@@ -461,29 +462,31 @@ export class TreasureCannon extends Scene {
             .times(Mat4.translation(0, 0, 1.5))
             .times(Mat4.scale(1.2, 1.2, 0.5)).times(Mat4.translation(0, 0, 0.4));
 
-            this.draw_apple_or_bomb(context, program_state, true);
+        //this.draw_apple_or_bomb(context, program_state, false);
 
-        if (this.apple_exists) {
-            this.draw_apple_or_bomb(context, program_state, false);
-        }
+        // if (this.apple_exists) {
+        //     this.draw_apple_or_bomb(context, program_state, false);
+        // }
 
-        if (this.apple_exists && this.check_collision(
-            {
-                min: vec3(person_transform[0][3] - .05, person_transform[1][3] - .05, person_transform[2][3] - .04),
-                max: vec3(person_transform[0][3] + .05, person_transform[1][3] + .05, person_transform[2][3] + .04)
-            },
-            {
-                min: vec3(this.apple_transform[0][3] - .05, this.apple_transform[1][3] - .05, this.apple_transform[2][3] - .05),
-                max: vec3(this.apple_transform[0][3] + 0.05, this.apple_transform[1][3] + 0.05, this.apple_transform[2][3]+.05)
-            }
-        )) {
-            this.apple_exists = false;
+        // if (this.apple_exists && this.check_collision(
+        //     {
+        //         min: vec3(person_transform[0][3] - .05, person_transform[1][3] - .05, person_transform[2][3] - .04),
+        //         max: vec3(person_transform[0][3] + .05, person_transform[1][3] + .05, person_transform[2][3] + .04)
+        //     },
+        //     {
+        //         min: vec3(this.apple_transform[0][3] - .05, this.apple_transform[1][3] - .05, this.apple_transform[2][3] - .05),
+        //         max: vec3(this.apple_transform[0][3] + 0.05, this.apple_transform[1][3] + 0.05, this.apple_transform[2][3]+.05)
+        //     }
+        // )) {
+        //     this.apple_exists = false
+        //     }
 
-    }
         this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0, 1)), this.person_move);
         this.draw_clouds_and_trees (context, program_state, t);
 
-        this.shoot_object(t, theta); 
+        if(Math.floor(t) % 5 == 0){
+            this.shoot_object(t, theta); 
+        }
 
         if (!this.start_game){
             this.shapes.start_screen.render(context, program_state, model_transform);
@@ -491,7 +494,7 @@ export class TreasureCannon extends Scene {
 
         for (let projectile of this.projectiles) {
             projectile.update(t);
-            projectile.render(context, program_state);
+            //projectile.render(context, program_state);
         }
     }
 }
