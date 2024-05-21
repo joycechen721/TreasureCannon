@@ -3,6 +3,7 @@ import Person from './objects/Person.js';
 import Cloud from  './objects/Cloud.js';
 import Tree from  './objects/Tree.js';
 import StartScreen from './objects/StartScreen.js';
+import Projectile from './objects/Projectile.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
@@ -91,6 +92,7 @@ export class TreasureCannon extends Scene {
 
         this.person_move = 0;
         this.start_game = false;
+        this.projectiles = []; 
         this.initial_camera_location = Mat4.look_at(vec3(0, 30, 0), vec3(0, 0, 0), vec3(0, 0, 1));
     }
 
@@ -338,6 +340,18 @@ export class TreasureCannon extends Scene {
         }
     }
 
+    shoot_object(t, theta){
+        //position of cannon
+        let position = vec4(-1.5, 0, 7.5, 0); 
+        //random number from 1 to 10; will probably change range later 
+        let initial_velocity = Math.floor(Math.random() * 10) + 1; 
+        let launch_angle = theta; 
+        //current time
+        let launch_time = t; 
+        
+        this.projectiles.push(new Projectile("apple", position, initial_velocity,  launch_angle, launch_time));
+    }
+
     check_collision(bounding_box1, bounding_box2) {
         const collision = !(bounding_box1.max[0] < bounding_box2.min[0] || bounding_box1.min[0] > bounding_box2.max[0] ||
             bounding_box1.max[1] < bounding_box2.min[1] || bounding_box1.min[1] > bounding_box2.max[1] ||
@@ -469,8 +483,15 @@ export class TreasureCannon extends Scene {
         this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0, 1)), this.person_move);
         this.draw_clouds_and_trees (context, program_state, t);
 
+        this.shoot_object(t, theta); 
+
         if (!this.start_game){
             this.shapes.start_screen.render(context, program_state, model_transform);
+        }
+
+        for (let projectile of this.projectiles) {
+            projectile.update(t);
+            projectile.render(context, program_state);
         }
     }
 }
