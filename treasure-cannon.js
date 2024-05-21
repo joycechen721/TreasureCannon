@@ -494,7 +494,7 @@ export class TreasureCannon extends Scene {
 
         for (let projectile of this.projectiles) {
             projectile.update(t);
-            //projectile.render(context, program_state);
+            projectile.render(context, program_state);
         }
     }
 }

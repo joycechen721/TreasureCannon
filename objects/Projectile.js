@@ -14,15 +14,17 @@ const COLORS = {
   };
 
 export default class Projectile {
-    constructor(type, position, initial_velocity, theta, launch_time) {
+    constructor(type, initial_position, initial_velocity, theta, launch_time) {
         this.type = type;
-        this.position = position;
+        this.position = initial_position;
         this.initial_velocity = initial_velocity;
         this.theta = theta;
         this.launch_time = launch_time;
         this.gravity = -9.81;
         this.v_x = 0; 
         this.v_y = 0; 
+        this.dx = 0; 
+        this.dy = 0; 
 
         this.shapes = {
             pizza: new defs.Triangle(),
@@ -38,6 +40,19 @@ export default class Projectile {
             test2: new Material(new defs.Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#992828")}),
         }
+    }
+
+    draw_apple(context, program_state){
+        let model_transform = Mat4.identity(); 
+        let apple_transform = model_transform
+            .times(Mat4.translation(10.5 - this.dx, 3, 4.5 + this.dy))
+            .times(Mat4.scale(.5, .5, .5));
+        this.shapes.apple.draw(
+            context,
+            program_state,
+            apple_transform,
+            this.materials.apple_texture,
+        );
     }
 
     draw_apple_or_bomb(context, program_state, is_bomb){
@@ -162,13 +177,16 @@ export default class Projectile {
 
     update(current_time) {
         let t = current_time - this.launch_time
-        this.v_x = this.velocity * Math.cos(this.theta);
-        this.v_y = this.velocity * Math.sin(this.theta) + (this.gravity * t);
+        let v_x = this.initial_velocity * Math.cos(this.theta);
+        let v_y = this.initial_velocity * Math.sin(this.theta);
+
+        this.dx = v_x * t; // x(t) = x0 + v0x * t
+        this.dy = v_y * t + 0.5 * this.gravity * t * t; // y(t) = y0 + v0y * t - (1/2) * g * t^2
     }
 
     render(context, program_state) {
         if (this.type == "apple"){
-            this.draw_apple_or_bomb(context, program_state, false); 
+            this.draw_apple(context, program_state); 
         }
         else if (this.type == "bomb"){
             this.draw_apple_or_bomb(context, program_state, true); 
