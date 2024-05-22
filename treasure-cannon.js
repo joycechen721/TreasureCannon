@@ -17,7 +17,7 @@ const COLORS = {
 
   const PATHS = {
     brick_wall: "assets/brick-wall.jpeg",
-    sand: "assets/sand.png",
+    sand1: "assets/sand1.png",
     sky: "assets/sky.png",
   };
 
@@ -56,12 +56,12 @@ export class TreasureCannon extends Scene {
                 {ambient: 1, diffusivity: 1, color: hex_color("#992828")}),
             
             wall_texture: new Material(new defs.Textured_Phong(), {
-                ambient: .5, diffusivity: .8,color: COLORS.blue, texture: new Texture(PATHS.sky),
+                ambient: 1, texture: new Texture(PATHS.sky),
             }),
             side_wall_texture: new Material(new defs.Textured_Phong(), {
-                ambient: .5, diffusivity: .8, color: COLORS.blue, texture: new Texture(PATHS.sky)}),
+                ambient: 1, texture: new Texture(PATHS.sky)}),
             ground_texture: new Material( new defs.Textured_Phong(), {
-                ambient: .5, color: COLORS.yellow, texture: new Texture(PATHS.sand),
+                ambient: 1, texture: new Texture(PATHS.sand1),
             }),
             apple_texture: new Material ( new defs.Phong_Shader(), {ambient: 1, color: hex_color("#992828")}),
             apple_stem_texture: new Material ( new defs.Phong_Shader(), {ambient: .9, diffusivity: .8, color: COLORS.green}),
@@ -339,6 +339,7 @@ export class TreasureCannon extends Scene {
         let model_transform = Mat4.identity();
 
         const light_position = vec4(0, 10, 20, 1);
+      
         program_state.lights = [new Light(light_position, color(1,1,1,1), 100)];
 
         this.draw_background(context, program_state);
