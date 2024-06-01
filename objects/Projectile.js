@@ -66,6 +66,7 @@ export default class Projectile {
             apple_stem_transform,
             this.materials.apple_stem_texture,
             );
+            return apple_transform; 
     }
 
     draw_bomb(context, program_state){
@@ -93,6 +94,7 @@ export default class Projectile {
             bomb_stem_transform,
             this.materials.apple_stem_texture.override({ color: COLORS.yellow }),
         );
+        return bomb_transform; 
     }
 
     draw_pizza(context, program_state){
@@ -145,6 +147,7 @@ export default class Projectile {
             topping_transform.times((Mat4.translation(0, 4, 0))),
             this.materials.test2,
         );
+        return pizza_transform; 
     }
 
     update(current_time) {
@@ -156,21 +159,20 @@ export default class Projectile {
         this.dy = v_y * t + 0.5 * this.gravity * t * t; // y(t) = y0 + v0y * t - (1/2) * g * t^2
 
         let curr_x = this.position[0] + this.dx;
-        let curr_y = 3; 
         let curr_z = this.position[2] + this.dy;
         
-        return { x: curr_x, y: curr_y, z: curr_z };     
+        return { x: curr_x, z: curr_z };     
     }
 
     render(context, program_state) {
         if (this.type == "apple"){
-            this.draw_apple(context, program_state); 
+            return this.draw_apple(context, program_state); 
         }
         else if (this.type == "bomb"){
-            this.draw_bomb(context, program_state); 
+            return this.draw_bomb(context, program_state); 
         }
         else if(this.type == "pizza"){
-            this.draw_pizza(context, program_state); 
+            return this.draw_pizza(context, program_state); 
         }
     }
 

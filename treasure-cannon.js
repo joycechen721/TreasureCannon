@@ -4,6 +4,7 @@ import Cloud from  './objects/Cloud.js';
 import Tree from  './objects/Tree.js';
 import StartScreen from './objects/StartScreen.js';
 import Projectile from './objects/Projectile.js';
+import { Text_Line } from '../examples/text-demo.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
@@ -17,12 +18,18 @@ const COLORS = {
     green: hex_color("#50C878"),
   };
 
-  const PATHS = {
+const PATHS = {
     brick_wall: "assets/brick-wall.jpeg",
     sand: "assets/sand.png",
     sky: "assets/sky.png",
-  };
+};
 
+//change what each item is worth here 
+const ITEM_POINTS = {
+    apple: 3, 
+    bomb: -5, 
+    pizza: 5, 
+}; 
 
   
   
@@ -53,6 +60,7 @@ export class TreasureCannon extends Scene {
             tree: new Tree(),
             start_screen: new StartScreen(),
             cylinder: new defs.Capped_Cylinder(20, 20, [[0, 1], [0, 1]]),
+            text: new Text_Line(100),
         };
 
         // *** Materials
@@ -81,20 +89,16 @@ export class TreasureCannon extends Scene {
             apple_texture: new Material ( new defs.Phong_Shader(), {ambient: 1, color: hex_color("#992828")}),
             apple_stem_texture: new Material ( new defs.Phong_Shader(), {ambient: .9, diffusivity: .8, color: COLORS.green}),
             pizza_texture: new Material ( new defs.Phong_Shader(), {ambient: .9, color: COLORS.yellow}),
+            text: new Material(new defs.Textured_Phong(), {ambient: 1, color: hex_color("#000000"), texture: new Texture('../assets/text.png')}),
             
         }
-
-        this.apple_y_position = 0; // initial y position of the apple
-        this.apple_exists = false;
-        this.apple_transform = Mat4.identity();
-
-        this.bomb_z_position = 3;
 
         this.person_move = 0;
         this.start_game = false;
         this.projectiles = []; 
         this.time_interval_between_projectiles = 4; 
         this.last_shot_time = 0; 
+        this.points = 0; 
         this.initial_camera_location = Mat4.look_at(vec3(0, 30, 0), vec3(0, 0, 0), vec3(0, 0, 1));
     }
 
@@ -124,123 +128,6 @@ export class TreasureCannon extends Scene {
         }
         // Draws background
     }
-
-    draw_pizza(context, program_state){
-        let pizza_transform = Mat4.identity()
-        pizza_transform = pizza_transform
-        .times(Mat4.translation(0,2,-2))
-        .times(Mat4.scale(1.3, 1.3, 2.8))
-        .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0))
-        .times(Mat4.rotation((Math.PI) / 4, 0, 0, 1));
-        // Scale appropriately to cover the screen
-        
-        this.shapes.pizza.draw(
-        context,
-        program_state,
-        pizza_transform,
-        this.materials.pizza_texture
-        );
-
-        let crust_transform = pizza_transform;
-        crust_transform = crust_transform 
-        .times(Mat4.rotation(Math.PI/4, 0, 0, 1))
-        .times(Mat4.translation(.7, 0, -.01))
-        .times(Mat4.scale(.2, 1, .2))
-        .times(Mat4.scale(.3, .7, .2));
-        this.shapes.square.draw(
-            context,
-            program_state,
-            crust_transform,
-            this.materials.pizza_texture.override({ color: hex_color("#7B3F00")})
-            );
-        let topping_transform = pizza_transform;
-        topping_transform = topping_transform
-        .times(Mat4.scale(.2, .2, .2))
-        .times(Mat4.scale(.5, .5, .5))
-        .times(Mat4.translation(1.8, 2, 0));
-        this.shapes.cylinder.draw(
-            context,
-            program_state,
-            topping_transform,
-            this.materials.test2,
-        );
-        this.shapes.cylinder.draw(
-            context,
-            program_state,
-            topping_transform.times((Mat4.translation(4, -.3, 0))),
-            this.materials.test2,
-        );
-        this.shapes.cylinder.draw(
-            context,
-            program_state,
-            topping_transform.times((Mat4.translation(0, 4, 0))),
-            this.materials.test2,
-        );
-
-    }
-    // draw_apple_or_bomb(context, program_state, is_bomb){
-    //     // if (!this.apple_exists) return;
-
-    //     const t = program_state.animation_time / 1000
-    //     let apple_transform = Mat4.identity()
-
-    //     if (!is_bomb){
-    //     apple_transform = apple_transform
-    //     .times(Mat4.translation(0,2.5,Math.sin(t*3) * 5))
-    //     .times(Mat4.scale(.5, .5, .5))
-    //     .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
-    //     // Scale appropriately to cover the screen
-    //     }
-    //     else {
-    //         apple_transform = apple_transform
-    //         .times(Mat4.translation(-5,2.5,this.bomb_z_position + Math.sin(t*3) * 5))
-    //         .times(Mat4.scale(.5, .5, .5))
-    //         .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
-    //     }
-
-    //     if (!is_bomb){
-    //         this.shapes.apple.draw(
-    //         context,
-    //         program_state,
-    //         apple_transform,
-    //         this.materials.apple_texture,
-    //         );
-    //         this.apple_transform = apple_transform;
-    //     } else {
-    //         this.shapes.bomb.draw(
-    //             context,
-    //             program_state,
-    //             apple_transform,
-    //             this.materials.apple_texture.override({ color: hex_color("#000000") }),
-    //             );
-    //     }
-
-    //     let apple_stem_transform = Mat4.identity()
-    //     apple_stem_transform =apple_transform
-    //     .times(Mat4.translation(0,1,0))
-    //     .times(Mat4.scale(.2, .8, .1))
-    //     .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
-
-    //     if (!is_bomb){
-
-    //     this.shapes.apple_stem.draw(
-    //         context,
-    //         program_state,
-    //         apple_stem_transform,
-    //         this.materials.apple_stem_texture,
-    //         );
-
-    //     }else {
-    //         this.shapes.apple_stem.draw(
-    //             context,
-    //             program_state,
-    //             apple_stem_transform,
-    //             this.materials.apple_stem_texture.override({ color: COLORS.yellow }),
-    //             );
-    //     }
-
-    
-    // }
 
     draw_background(context, program_state) {
         // WALL
@@ -350,6 +237,7 @@ export class TreasureCannon extends Scene {
         let launch_time = t; 
         
         //randomly choosing which object to fire
+        //each item has equal probability to be chosen now, but should be refined so that bombs are rarer than food items and pizza is rarer than apples 
         let id_num = Math.floor(Math.random() * 3) + 1;
         if(id_num == 1){
             this.projectiles.push(new Projectile("apple", initial_position, initial_velocity,  launch_angle, launch_time));
@@ -476,31 +364,13 @@ export class TreasureCannon extends Scene {
         this.draw_background(context, program_state);
         program_state.lights = [new Light(light_position, color(1,1,1,1), 1000)];
 
-        let person_transform = model_transform.times(Mat4.translation(0, 0, 1))
-            .times(Mat4.scale(0.6, 0.6, 0.6)).times(Mat4.translation(this.person_move, 4, -8))
+        let person_transform = model_transform.times(Mat4.translation(0, 1, 1))
+            .times(Mat4.scale(0.6, 0.6, 0.6))
+            .times(Mat4.translation(this.person_move, 4, -8))
             .times(Mat4.translation(0, 0, 1.5))
             .times(Mat4.scale(1.2, 1.2, 0.5)).times(Mat4.translation(0, 0, 0.4));
 
-        //this.draw_apple_or_bomb(context, program_state, false);
-
-        // if (this.apple_exists) {
-        //     this.draw_apple_or_bomb(context, program_state, false);
-        // }
-
-        // if (this.apple_exists && this.check_collision(
-        //     {
-        //         min: vec3(person_transform[0][3] - .05, person_transform[1][3] - .05, person_transform[2][3] - .04),
-        //         max: vec3(person_transform[0][3] + .05, person_transform[1][3] + .05, person_transform[2][3] + .04)
-        //     },
-        //     {
-        //         min: vec3(this.apple_transform[0][3] - .05, this.apple_transform[1][3] - .05, this.apple_transform[2][3] - .05),
-        //         max: vec3(this.apple_transform[0][3] + 0.05, this.apple_transform[1][3] + 0.05, this.apple_transform[2][3]+.05)
-        //     }
-        // )) {
-        //     this.apple_exists = false
-        //     }
-
-        this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0, 1)), this.person_move);
+        this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0.5, 1)), this.person_move);
         this.draw_clouds_and_trees (context, program_state, t);
 
         if(this.start_game && (t - this.last_shot_time) >= this.time_interval_between_projectiles){
@@ -514,15 +384,49 @@ export class TreasureCannon extends Scene {
 
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             let projectile = this.projectiles[i];
-            let { x, y, z } = projectile.update(t);
+            let { x, z } = projectile.update(t);
+            //checking if projectile is out of camera view 
             if(x < -20 || z < -9){
                  this.projectiles.splice(i, 1);
             } 
             else {
           
-                projectile.render(context, program_state);
+                let projectile_transform = projectile.render(context, program_state);
+                //checking collision between player and items
+                if (this.check_collision(
+                    {
+                        min: vec3(person_transform[0][3] - 1, person_transform[1][3] - 2, person_transform[2][3] - 0.1),
+                        max: vec3(person_transform[0][3] + 1, person_transform[1][3] + 2, person_transform[2][3] + 0.05)
+                    },
+                    {
+                        min: vec3(projectile_transform[0][3] - .25, projectile_transform[1][3] - .25, projectile_transform[2][3] - .1),
+                        max: vec3(projectile_transform[0][3] + .25, projectile_transform[1][3] + .25, projectile_transform[2][3] + .1)
+                    }
+                ))  {
+                    if(projectile.type == "apple"){
+                        this.points += ITEM_POINTS.apple
+                    }
+                    else if(projectile.type == "bomb"){
+                        this.points += ITEM_POINTS.bomb
+                    }
+                    else if(projectile.type == "pizza"){
+                        this.points += ITEM_POINTS.pizza
+                    }
+                    this.projectiles.splice(i, 1);
+                    }
             
             }
+        }
+
+        if(this.start_game){
+            let points_text = "Points: " + this.points; 
+            this.shapes.text.set_string(points_text, context.context);
+            let points_matrix = model_transform
+                .times(Mat4.translation(13, 10.1, 7))
+                .times(Mat4.scale(0.3, 0.2, 0.3))
+                .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+                .times(Mat4.rotation(Math.PI, 0, 1, 0))
+            this.shapes.text.draw(context, program_state, points_matrix, this.materials.text);
         }
     }
 }

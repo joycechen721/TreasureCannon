@@ -21,7 +21,7 @@ export default class StartScreen extends Object {
             title: new Material(new Textured_Phong(), 
                 {ambient: 1, color: hex_color("#000000"), texture: new Texture('../assets/title.jpg')}),
             start_text: new Material(new Textured_Phong(1), 
-                {ambient: 1, color: hex_color("#ffffff"), texture: new Texture('../assets/text.png'),}),
+                {ambient: 1, color: hex_color("#ffffff"), texture: new Texture('../assets/text.png')}),
         }
     }
 
