@@ -1,7 +1,7 @@
 import {defs, tiny} from '../examples/common.js';
 import Object from './Object.js';
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
 
 const {Cube, Subdivision_Sphere} = defs;
@@ -17,16 +17,16 @@ export default class Person extends Object {
         };
 
         this.materials = {
-            basket: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#000000")}),
+            basket: new Material(new defs.Textured_Phong(),
+                {ambient: .3, diffusivity: .6, texture: new Texture('../../assets/clothes.png')}),
             head: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#FFFFFF")}),
-            body: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#E6B869")}),
+                {ambient: .8, diffusivity: .6, color: hex_color("#CC9C80")}),
+            body: new Material(new defs.Textured_Phong(),
+                {ambient: .5,  texture: new Texture('../../assets/clothes.png')}),
             arm: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#FFFFFF")}),
-            leg: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#C2C592")}),
+                {ambient: .8,diffusivity: .6, color: hex_color("#CC9C80")}),
+            leg: new Material(new defs.Textured_Phong(),
+                {ambient: .5,  texture: new Texture('../../assets/clothes.png')}),
         }
     }
 
