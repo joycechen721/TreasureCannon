@@ -106,6 +106,7 @@ export class TreasureCannon extends Scene {
         this.points = 0; 
         this.initial_camera_location = Mat4.look_at(vec3(0, 30, 0), vec3(0, 0, 0), vec3(0, 0, 1));
         this.attach_camera_to_person = false;
+        this.attach_camera_to_cannon = false;
        
     }
 
@@ -157,10 +158,10 @@ export class TreasureCannon extends Scene {
         // GROUND
         let ground_transform = Mat4.identity();
         ground_transform = ground_transform
-        .times(Mat4.translation(0, -2, -9))
+        .times(Mat4.translation(0, 0, -9))
         .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0))
       
-        .times(Mat4.scale(20, 1, 10))
+        .times(Mat4.scale(20, 0, 30))
         .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0));
         this.shapes.ground.draw(
             context,
@@ -174,7 +175,7 @@ export class TreasureCannon extends Scene {
 
         let right_side_transform = side_transform
         .times(Mat4.translation(-20,0, 5))
-        .times(Mat4.scale(20, 20, 20))
+        .times(Mat4.scale(20, 40, 20))
         .times(Mat4.rotation((3 * Math.PI) / 2, 0, 1, 0));
         this.shapes.side_walls.draw(
         context,
@@ -186,7 +187,7 @@ export class TreasureCannon extends Scene {
         // left
         let left_side_transform = side_transform
         .times(Mat4.translation(20,0, 5))
-        .times(Mat4.scale(20, 20, 20))
+        .times(Mat4.scale(20, 40, 20))
         .times(Mat4.rotation((3 * Math.PI) / 2, 0, 1, 0));
         this.shapes.side_walls.draw(
         context,
@@ -194,6 +195,20 @@ export class TreasureCannon extends Scene {
         left_side_transform,
         this.materials.side_wall_texture
         ); 
+
+        // top
+        let top_transform = left_side_transform
+        .times(Mat4.translation(1,0, 1))
+        .times(Mat4.rotation((Math.PI/2), 0, 1, 0))
+        
+
+        this.shapes.side_walls.draw(
+            context,
+            program_state,
+            top_transform,
+            this.materials.side_wall_texture
+        ); 
+
     }
 
     draw_clouds_and_trees (context, program_state, t){
@@ -289,10 +304,17 @@ export class TreasureCannon extends Scene {
         this.key_triggered_button("Move right", ["ArrowRight"], () => {this.person_move -= 2; this.person_right = true;})
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
-        this.key_triggered_button("Attach/Detach Camera", ["b"], () => {
+        this.key_triggered_button("First Person POV", ["b"], () => {
             this.attach_camera_to_person = !this.attach_camera_to_person;
+            if(this.attach_camera_to_cannon){
+                this.attach_camera_to_cannon = false;
+            }
         });
-        this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
+        this.key_triggered_button("Cannon POV", ["c"], () => {
+            this.attach_camera_to_cannon = !this.attach_camera_to_cannon;
+            if(this.attach_camera_to_person){
+                this.attach_camera_to_person = false;
+            }});
         this.new_line();
         this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
         this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
@@ -351,8 +373,7 @@ export class TreasureCannon extends Scene {
         let model_transform_cannon_body = tower_transform
             .times(Mat4.translation(-1.5, 0, 7.5)) 
             .times(Mat4.rotation(-Math.PI / 2.5, 0, 1, 0)) 
-            .times(Mat4.scale(0.6, 0.6, 4));
-        
+            .times(Mat4.scale(0.6, 0.6, 4))
 
         //rotating the cannon body 
         if(this.start_game){    
@@ -398,28 +419,35 @@ export class TreasureCannon extends Scene {
         // CAMERA ANGLE
        // Calculate the person's position
        let basket_transform = person_transform.times(Mat4.translation(0,0, -4));
-let person_position = vec3(basket_transform[0][3], basket_transform[1][3], basket_transform[2][3]);
+        let person_position = vec3(basket_transform[0][3], basket_transform[1][3], basket_transform[2][3]);
 
-// Calculate the cannon's position
-let cannon_position = vec3(tower_transform[0][3], tower_transform[1][3], tower_transform[2][3] + 17 );
+        // Calculate the cannon's position
+        let cannon_position = vec3(tower_transform[0][3], tower_transform[1][3], tower_transform[2][3] + 17 );
 
+        // Set the camera to follow the person and look at the cannon with a 90-degree right rotation
+        let first_person_POV = Mat4.look_at(
+            person_position, // Position adjusted for 90 degrees right rotation
+            cannon_position,                      // Look at the cannon
+            vec3(0, 0, 1)                         // Up direction adjusted for 90 degrees right rotation
+        );
 
-// Calculate the offset for the new camera position
-const offset = vec3(0, 0, 0); // Original offset
-const rotated_offset = vec3(offset[2], offset[1], -offset[0]); // Rotate the offset 90 degrees to the right
+        let cannon_POV = Mat4.look_at(
+            cannon_position.plus(vec3(0,0,-2)),                      // Look at the cannon
+            person_position, // Position adjusted for 90 degrees right rotation
+            vec3(-1, 0, 0)                         // Up direction adjusted for 90 degrees right rotation
+        );
 
-// Set the camera to follow the person and look at the cannon with a 90-degree right rotation
-let first_person_POV = Mat4.look_at(
-    person_position.plus(rotated_offset), // Position adjusted for 90 degrees right rotation
-    cannon_position,                      // Look at the cannon
-    vec3(0, 0, 1)                         // Up direction adjusted for 90 degrees right rotation
-);
-
-    if(this.start_game){
-        program_state.set_camera(this.attach_camera_to_person ?
-            first_person_POV :
-            this.initial_camera_location);
+        if(this.start_game){
+        if (this.attach_camera_to_person){
+            program_state.set_camera(first_person_POV);
         }
+        else if (this.attach_camera_to_cannon){
+            program_state.set_camera(cannon_POV);
+        }
+        else {
+            program_state.set_camera(this.initial_camera_location);
+        }
+    }
 
         this.draw_clouds_and_trees (context, program_state, t);
     
