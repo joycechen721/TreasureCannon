@@ -30,9 +30,27 @@ export default class Person extends Object {
         }
     }
 
-    render(context, program_state, model_transform=Mat4.identity(), move_amt=0) {
+    render(context, program_state, model_transform=Mat4.identity(), move_amt=0, left_move, right_move) {
+      
+        const t = program_state.animation_time / 1000; // Current time
+
+        let rotation_angle = 0;
+        let limb_rotation = 0;
+
+        if (left_move || right_move){
+            limb_rotation = 0 ; // this needs to be changed
+        }
+
+        if (left_move){
+            rotation_angle = Math.PI/2;
+        }
+        else if (right_move){
+            rotation_angle = -Math.PI/2;
+        }
+
         const head_transform = model_transform
             .times(Mat4.scale(0.6, 0.6, 0.6)).times(Mat4.translation(move_amt, 4, -11))
+            .times(Mat4.rotation(rotation_angle, 0, 0, 1))
         const basket_transform = head_transform
             .times(Mat4.translation(0, 0, 1.5))
         const basket_transform2 = basket_transform
@@ -40,9 +58,15 @@ export default class Person extends Object {
         const body_transform = head_transform
             .times(Mat4.scale(0.8, 0.5, 1.2)).times(Mat4.translation(0, 0, -1.8))
         const rightarm_transform = body_transform
-            .times(Mat4.scale(0.2, 1, 0.8)).times(Mat4.translation(-6, 0, 0.2))
+            .times(Mat4.scale(.4, .5, 0.8))
+            .times(Mat4.rotation(limb_rotation, 1, 0, 0))
+            .times(Mat4.translation(-3, 0, 0.2))
+           
         const leftarm_transform = body_transform
-            .times(Mat4.scale(0.2, 1, 0.8)).times(Mat4.translation(6, 0, 0.2))
+            .times(Mat4.scale(.4, .5, 0.8))
+            .times(Mat4.rotation(limb_rotation, 1, 0, 0))
+            .times(Mat4.translation(3, 0, 0.2))
+          
         const rightleg_transform = body_transform
             .times(Mat4.scale(0.4, 1, 0.8)).times(Mat4.translation(-1.5, 0, -2.2))
         const leftleg_transform = body_transform
@@ -56,5 +80,8 @@ export default class Person extends Object {
         this.shapes.leg.draw(context, program_state, leftarm_transform, this.materials.arm);
         this.shapes.leg.draw(context, program_state, rightleg_transform, this.materials.leg);
         this.shapes.leg.draw(context, program_state, leftleg_transform, this.materials.leg);
+
+        return head_transform;
+
     }
 }

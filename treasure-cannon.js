@@ -2,6 +2,9 @@ import {defs, tiny} from './examples/common.js';
 import Person from './objects/Person.js';
 import Cloud from  './objects/Cloud.js';
 import Tree from  './objects/Tree.js';
+import StartScreen from './objects/StartScreen.js';
+import Projectile from './objects/Projectile.js';
+import { Text_Line } from '../examples/text-demo.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
@@ -15,12 +18,19 @@ const COLORS = {
     green: hex_color("#50C878"),
   };
 
-  const PATHS = {
+const PATHS = {
     brick_wall: "assets/brick-wall.jpeg",
     sand1: "assets/sand1.png",
     sky: "assets/sky.png",
-  };
+};
 
+//change what each item is worth here 
+const ITEM_POINTS = {
+    apple: 3, 
+    bomb: -5, 
+    pizza: 5, 
+    coin: 8,
+}; 
 
   
   
@@ -33,6 +43,10 @@ export class TreasureCannon extends Scene {
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
+            tower_body: new defs.Capped_Cylinder(1, 6), 
+            tower_head: new defs.Cube(), 
+            tower_cone: new defs.Rounded_Closed_Cone(2, 8), 
+            cannon_body: new defs.Capped_Cylinder(1, 20), 
             square: new defs.Square(),
             wall1: new defs.Square(),
             wall2: new defs.Square(),
@@ -45,15 +59,25 @@ export class TreasureCannon extends Scene {
             side_walls: new defs.Square(),
             cloud: new Cloud(),
             tree: new Tree(),
+            start_screen: new StartScreen(),
             cylinder: new defs.Capped_Cylinder(20, 20, [[0, 1], [0, 1]]),
+            text: new Text_Line(100),
         };
 
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
+                {ambient: 1, diffusivity: 1, color: hex_color("#992828")}),
             test2: new Material(new Gouraud_Shader(),
                 {ambient: 1, diffusivity: 1, color: hex_color("#992828")}),
+            tower_body: new Material(new defs.Textured_Phong(),
+                {ambient: .5, diffusivity: 1, color: hex_color("#73736B"), texture: new Texture(PATHS.brick_wall)}),
+            tower_head: new Material(new defs.Textured_Phong(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#992828"), texture: new Texture(PATHS.brick_wall)}),
+            tower_cone: new Material(new defs.Textured_Phong(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#992828"), texture: new Texture(PATHS.brick_wall)}),
+            cannon: new Material(new defs.Phong_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#FFFFFF")}),            
             
             wall_texture: new Material(new defs.Textured_Phong(), {
                 ambient: 1, texture: new Texture(PATHS.sky),
@@ -66,135 +90,51 @@ export class TreasureCannon extends Scene {
             apple_texture: new Material ( new defs.Phong_Shader(), {ambient: 1, color: hex_color("#992828")}),
             apple_stem_texture: new Material ( new defs.Phong_Shader(), {ambient: .9, diffusivity: .8, color: COLORS.green}),
             pizza_texture: new Material ( new defs.Phong_Shader(), {ambient: .9, color: COLORS.yellow}),
-            
+            text: new Material(new defs.Textured_Phong(), {ambient: 1, color: hex_color("#000000"), texture: new Texture('../assets/text.png')}),
+            coin: new Material (new defs.Phong_Shader(), {ambient: 1, color: COLORS.yellow}),
         }
-
-        this.apple_z_position = 0; // initial y position of the apple
-        this.apple_exists = true;
-        this.apple_transform = Mat4.identity();
-
-        this.bomb_z_position = 3;
 
         this.person_move = 0;
+        this.person_left = false;
+        this.person_right = false;
+        this.person_last_move = 0;
+
+        this.start_game = false;
+        this.projectiles = []; 
+        this.time_interval_between_projectiles = 4; 
+        this.last_shot_time = 0; 
+        this.points = 0; 
         this.initial_camera_location = Mat4.look_at(vec3(0, 30, 0), vec3(0, 0, 0), vec3(0, 0, 1));
+        this.attach_camera_to_person = false;
+       
+    }
+
+
+    draw_tower_prongs(context, program_state, model_transform) {
+        for (let i = -2; i < 3; i += 2) {
+            for (let j = -2; j < 3; j += 2) {
+                if (i !== 0 || j !== 0) {
+                    let model_transform_tower_thingy = model_transform
+                        .times(Mat4.translation(i, j, 6))
+                        .times(Mat4.scale(0.5, 0.5, 1.3));
+                    this.shapes.tower_head.draw(context, program_state, model_transform_tower_thingy, this.materials.tower_head);
+                }
+            }
+        }
+    }
+
+    draw_tower_cones(context, program_state, model_transform){
+        for (let i = -2; i < 3; i += 2) {
+            for (let j = -2; j < 3; j += 2) {
+                if (i !== 0 && j !== 0) {
+                    let model_transform_tower_cone = model_transform
+                        .times(Mat4.translation(i, j, 8))
+                        .times(Mat4.scale(1, 1, 0.7)); 
+                    this.shapes.tower_cone.draw(context, program_state, model_transform_tower_cone, this.materials.tower_cone);
+                }
+            }
+        }
         // Draws background
-    }
-
-    draw_pizza(context, program_state){
-        let pizza_transform = Mat4.identity()
-        pizza_transform = pizza_transform
-        .times(Mat4.translation(0,2,-2))
-        .times(Mat4.scale(1.3, 1.3, 2.8))
-        .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0))
-        .times(Mat4.rotation((Math.PI) / 4, 0, 0, 1));
-        // Scale appropriately to cover the screen
-        
-        this.shapes.pizza.draw(
-        context,
-        program_state,
-        pizza_transform,
-        this.materials.pizza_texture
-        );
-
-        let crust_transform = pizza_transform;
-        crust_transform = crust_transform 
-        .times(Mat4.rotation(Math.PI/4, 0, 0, 1))
-        .times(Mat4.translation(.7, 0, -.01))
-        .times(Mat4.scale(.2, 1, .2))
-        .times(Mat4.scale(.3, .7, .2));
-        this.shapes.square.draw(
-            context,
-            program_state,
-            crust_transform,
-            this.materials.pizza_texture.override({ color: hex_color("#7B3F00")})
-            );
-        let topping_transform = pizza_transform;
-        topping_transform = topping_transform
-        .times(Mat4.scale(.2, .2, .2))
-        .times(Mat4.scale(.5, .5, .5))
-        .times(Mat4.translation(1.8, 2, 0));
-        this.shapes.cylinder.draw(
-            context,
-            program_state,
-            topping_transform,
-            this.materials.test2,
-        );
-        this.shapes.cylinder.draw(
-            context,
-            program_state,
-            topping_transform.times((Mat4.translation(4, -.3, 0))),
-            this.materials.test2,
-        );
-        this.shapes.cylinder.draw(
-            context,
-            program_state,
-            topping_transform.times((Mat4.translation(0, 4, 0))),
-            this.materials.test2,
-        );
-
-    }
-    draw_apple_or_bomb(context, program_state, is_bomb){
-        // if (!this.apple_exists) return;
-
-        const t = program_state.animation_time / 1000
-        let apple_transform = Mat4.identity()
-
-        if (!is_bomb){
-        apple_transform = apple_transform
-        .times(Mat4.translation(0,2.5,Math.sin(t*3) * 5))
-        .times(Mat4.scale(.5, .5, .5))
-        .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
-        // Scale appropriately to cover the screen
-        }
-        else {
-            apple_transform = apple_transform
-            .times(Mat4.translation(-5,2.5,this.bomb_z_position + Math.sin(t*3) * 5))
-            .times(Mat4.scale(.5, .5, .5))
-            .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
-        }
-
-        if (!is_bomb){
-            this.shapes.apple.draw(
-            context,
-            program_state,
-            apple_transform,
-            this.materials.apple_texture,
-            );
-            this.apple_transform = apple_transform;
-        } else {
-            this.shapes.bomb.draw(
-                context,
-                program_state,
-                apple_transform,
-                this.materials.apple_texture.override({ color: hex_color("#000000") }),
-                );
-        }
-
-        let apple_stem_transform = Mat4.identity()
-        apple_stem_transform =apple_transform
-        .times(Mat4.translation(0,1,0))
-        .times(Mat4.scale(.2, .8, .1))
-        .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0));
-
-        if (!is_bomb){
-
-        this.shapes.apple_stem.draw(
-            context,
-            program_state,
-            apple_stem_transform,
-            this.materials.apple_stem_texture,
-            );
-
-        }else {
-            this.shapes.apple_stem.draw(
-                context,
-                program_state,
-                apple_stem_transform,
-                this.materials.apple_stem_texture.override({ color: COLORS.yellow }),
-                );
-        }
-
-    
     }
 
     draw_background(context, program_state) {
@@ -297,6 +237,30 @@ export class TreasureCannon extends Scene {
         }
     }
 
+    shoot_object(t, theta, initial_position){
+        //random number from 4 to 9; will probably change range later 
+        let initial_velocity = Math.floor(Math.random() * 9) + 4; 
+        let launch_angle = theta; 
+        //current time
+        let launch_time = t; 
+        
+        //randomly choosing which object to fire
+        //each item has equal probability to be chosen now, but should be refined so that bombs are rarer than food items and pizza is rarer than apples 
+        let id_num = Math.floor(Math.random() * 4) + 1;
+        if(id_num == 1){
+            this.projectiles.push(new Projectile("apple", initial_position, initial_velocity, launch_angle, launch_time));
+        }
+        else if(id_num == 2){
+            this.projectiles.push(new Projectile("bomb", initial_position, initial_velocity, launch_angle, launch_time));
+        }
+        else if(id_num == 3){
+            this.projectiles.push(new Projectile("pizza", initial_position, initial_velocity, launch_angle, launch_time));
+        }
+        else if (id_num == 4){
+            this.projectiles.push(new Projectile("coin", initial_position, initial_velocity, launch_angle, launch_time));
+        } 
+    }
+
     check_collision(bounding_box1, bounding_box2) {
         const collision = !(bounding_box1.max[0] < bounding_box2.min[0] || bounding_box1.min[0] > bounding_box2.max[0] ||
             bounding_box1.max[1] < bounding_box2.min[1] || bounding_box1.min[1] > bounding_box2.max[1] ||
@@ -306,14 +270,28 @@ export class TreasureCannon extends Scene {
         }
         return collision;
     }
-    
 
     make_control_panel() {
-        this.key_triggered_button("Move left", ["ArrowLeft"], () => {this.person_move += 2})
-        this.key_triggered_button("Move right", ["ArrowRight"], () => {this.person_move -= 2})
+        this.key_triggered_button("Start/Stop Game", ["t"], () =>
+            {
+                if (this.start_game){
+                    this.start_game = false
+                   
+                }
+                else {
+                    this.start_game = true
+                   
+                }
+            }
+          );
+
+        this.key_triggered_button("Move left", ["ArrowLeft"], () => {this.person_move += 2; this.person_left = true})
+        this.key_triggered_button("Move right", ["ArrowRight"], () => {this.person_move -= 2; this.person_right = true;})
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
-        this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
+        this.key_triggered_button("Attach/Detach Camera", ["b"], () => {
+            this.attach_camera_to_person = !this.attach_camera_to_person;
+        });
         this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
         this.new_line();
         this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
@@ -327,7 +305,9 @@ export class TreasureCannon extends Scene {
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         console.log("Display method called");
         if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+            if (this.start_game) {
+                this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+            }
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(this.initial_camera_location);
         }
@@ -335,49 +315,180 @@ export class TreasureCannon extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
+        // TODO: Create Planets (Requirement 1)
+        // this.shapes.[XXX].draw([XXX]) // <--example
+
+        // TODO: Lighting (Requirement 2)
+        // The parameters of the Light are: position, color, size
+
+        // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
         const t = program_state.animation_time / 1000
         let model_transform = Mat4.identity();
+        let tower_transform = model_transform.times(Mat4.translation(12, 3, -3))
+        let model_transform_tower_body = tower_transform.times(Mat4.scale(2.3, 2.3, 11.9));
 
         const light_position = vec4(0, 10, 20, 1);
       
         program_state.lights = [new Light(light_position, color(1,1,1,1), 100)];
+        this.shapes.tower_body.draw(context, program_state, model_transform_tower_body, this.materials.tower_body);
+
+        let model_transform_tower_head = tower_transform
+            .times(Mat4.translation(0, 0, 5))
+            .times(Mat4.scale(2.5, 2.5, 1)); 
+        this.shapes.tower_head.draw(context, program_state, model_transform_tower_head, this.materials.tower_head);
+        
+        this.draw_tower_prongs(context, program_state, tower_transform); 
+        this.draw_tower_cones(context, program_state, tower_transform); 
+
+        let model_transform_cannon_base = tower_transform
+            .times(Mat4.translation(0, 0, 7)); 
+        this.shapes.sphere.draw(context, program_state, model_transform_cannon_base, this.materials.cannon);
+
+        var max_angle = 0.3 * Math.PI;
+        var theta = max_angle / 2 + (max_angle / 2) * Math.sin((Math.PI * t));
+        
+        //initial cannon position
+        let model_transform_cannon_body = tower_transform
+            .times(Mat4.translation(-1.5, 0, 7.5)) 
+            .times(Mat4.rotation(-Math.PI / 2.5, 0, 1, 0)) 
+            .times(Mat4.scale(0.6, 0.6, 4));
+        
+
+        //rotating the cannon body 
+        if(this.start_game){    
+            model_transform_cannon_body = model_transform_cannon_body
+                .times(Mat4.scale(1/0.6, 1/0.6, 1/4.0))
+                .times(Mat4.translation(0, 0, -1.5)) 
+                .times(Mat4.rotation(theta, 0, 1, 0)) 
+                .times(Mat4.translation(0, 0, 1.5))
+                .times(Mat4.scale(0.6, 0.6, 4)); 
+        }
+        
+        this.shapes.cannon_body.draw(context, program_state, model_transform_cannon_body, this.materials.cannon);
+
+
+        //calculating the initial position of the projectile (since we want it to be at the end of the cannon body)
+        let initial_position_transform = model_transform_cannon_body
+            .times(Mat4.scale(1/0.6, 1/0.6, 1/4))
+            .times(Mat4.translation(0, 0, 2))
+            .times(Mat4.scale(0.6, 0.6, 4)); 
+
+        let initial_position = vec4(initial_position_transform[0][3], initial_position_transform[1][3], initial_position_transform[2][3], 1);
 
         this.draw_background(context, program_state);
         program_state.lights = [new Light(light_position, color(1,1,1,1), 1000)];
 
-        let person_transform = model_transform.times(Mat4.translation(0, 0, 1))
-            .times(Mat4.scale(0.6, 0.6, 0.6)).times(Mat4.translation(this.person_move, 4, -8))
+        let person_transform = model_transform.times(Mat4.translation(0, 1, 1))
+            .times(Mat4.scale(0.6, 0.6, 0.6))
+            .times(Mat4.translation(this.person_move, 4, -8))
             .times(Mat4.translation(0, 0, 1.5))
             .times(Mat4.scale(1.2, 1.2, 0.5)).times(Mat4.translation(0, 0, 0.4));
-
-            this.draw_apple_or_bomb(context, program_state, true);
-
-        if (this.apple_exists) {
-            this.draw_apple_or_bomb(context, program_state, false);
+        
+        if (this.person_last_move != 0 && t-this.person_last_move > 1){
+            this.person_last_move = 0;
+            this.person_left = false;
+            this.person_right = false;
+        }
+        if (this.person_last_move == 0 && (this.person_left || this.person_right)){
+            this.person_last_move = t;
         }
 
-        if (this.apple_exists && this.check_collision(
-            {
-                min: vec3(person_transform[0][3] - .05, person_transform[1][3] - .05, person_transform[2][3] - .04),
-                max: vec3(person_transform[0][3] + .05, person_transform[1][3] + .05, person_transform[2][3] + .04)
-            },
-            {
-                min: vec3(this.apple_transform[0][3] - .05, this.apple_transform[1][3] - .05, this.apple_transform[2][3] - .05),
-                max: vec3(this.apple_transform[0][3] + 0.05, this.apple_transform[1][3] + 0.05, this.apple_transform[2][3]+.05)
-            }
-        )) {
-            this.apple_exists = false;
+        this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0.5, 1)), this.person_move, this.person_left, this.person_right);
 
-    }
-        this.shapes.person.render(context, program_state, model_transform.times(Mat4.translation(0, 0, 1)), this.person_move);
+        // CAMERA ANGLE
+       // Calculate the person's position
+       let basket_transform = person_transform.times(Mat4.translation(0,0, -4));
+let person_position = vec3(basket_transform[0][3], basket_transform[1][3], basket_transform[2][3]);
+
+// Calculate the cannon's position
+let cannon_position = vec3(tower_transform[0][3], tower_transform[1][3], tower_transform[2][3] + 17 );
+
+
+// Calculate the offset for the new camera position
+const offset = vec3(0, 0, 0); // Original offset
+const rotated_offset = vec3(offset[2], offset[1], -offset[0]); // Rotate the offset 90 degrees to the right
+
+// Set the camera to follow the person and look at the cannon with a 90-degree right rotation
+let first_person_POV = Mat4.look_at(
+    person_position.plus(rotated_offset), // Position adjusted for 90 degrees right rotation
+    cannon_position,                      // Look at the cannon
+    vec3(0, 0, 1)                         // Up direction adjusted for 90 degrees right rotation
+);
+
+    if(this.start_game){
+        program_state.set_camera(this.attach_camera_to_person ?
+            first_person_POV :
+            this.initial_camera_location);
+        }
+
         this.draw_clouds_and_trees (context, program_state, t);
-        // this.draw_pizza(context, program_state);
+    
+
+        if(this.start_game && (t - this.last_shot_time) >= this.time_interval_between_projectiles){
+            this.shoot_object(t, theta, initial_position); 
+            this.last_shot_time = t; 
+        }
+
+        if (!this.start_game){
+            this.shapes.start_screen.render(context, program_state, model_transform);
+        }
+
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            let projectile = this.projectiles[i];
+            let { x, z } = projectile.update(t);
+            let projectile_time = projectile.launch_time;
+            //checking if projectile is out of camera view 
+            if(x < -20 || z < -9){
+                 this.projectiles.splice(i, 1);
+            } 
+            else {
+          
+                let projectile_transform = projectile.render(context, program_state);
+                
+                //checking collision between player and items
+                if (this.check_collision(
+                    {
+                        min: vec3(person_transform[0][3] - 0.5, person_transform[1][3] - 0.5, person_transform[2][3] - 0.5),
+                        max: vec3(person_transform[0][3] + 0.5, person_transform[1][3] + 0.5, person_transform[2][3] + 0.5)
+                    },
+                    {
+                        min: vec3(projectile_transform[0][3] - .5, projectile_transform[1][3] - .5, projectile_transform[2][3] - .5),
+                        max: vec3(projectile_transform[0][3] + .5, projectile_transform[1][3] + .5, projectile_transform[2][3] + .5)
+                    }
+                ))  {
+                    if(projectile.type == "apple"){
+                        this.points += ITEM_POINTS.apple
+                    }
+                    else if(projectile.type == "bomb"){
+                        this.points += ITEM_POINTS.bomb
+                    }
+                    else if(projectile.type == "pizza"){
+                        this.points += ITEM_POINTS.pizza
+                    }
+                    else if(projectile.type == "coin"){
+                        this.points += ITEM_POINTS.coin
+                    }
+                    this.projectiles.splice(i, 1);
+                    }
+            
+            }
+        }
+
+        if(this.start_game){
+            let points_text = "Points: " + this.points; 
+            this.shapes.text.set_string(points_text, context.context);
+            let points_matrix = model_transform
+                .times(Mat4.translation(13, 10.1, 7))
+                .times(Mat4.scale(0.3, 0.2, 0.3))
+                .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+                .times(Mat4.rotation(Math.PI, 0, 1, 0))
+            this.shapes.text.draw(context, program_state, points_matrix, this.materials.text);
+        }
     }
 }
 
 class Gouraud_Shader extends Shader {
     // This is a Shader using Phong_Shader as template
-    // TODO: Modify the glsl coder here to create a Gouraud Shader (Planet 2)
 
     constructor(num_lights = 2) {
         super();
