@@ -14,13 +14,13 @@ const COLORS = {
   };
 
 export default class Projectile {
-    constructor(type, initial_position, initial_velocity, theta, launch_time) {
+    constructor(type, initial_position, initial_velocity, theta, launch_time, gravity) {
         this.type = type;
         this.position = initial_position;
         this.initial_velocity = initial_velocity;
         this.theta = theta;
         this.launch_time = launch_time;
-        this.gravity = -9.81;
+        this.gravity = gravity;
         this.v_x = 0; 
         this.v_y = 0; 
         this.dx = 0; 
