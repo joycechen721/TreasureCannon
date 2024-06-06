@@ -300,17 +300,25 @@ export class TreasureCannon extends Scene {
             }
           );
 
-        this.key_triggered_button("Move left", ["ArrowLeft"], () => {this.person_move += 2; this.person_left = true})
-        this.key_triggered_button("Move right", ["ArrowRight"], () => {this.person_move -= 2; this.person_right = true;})
+        this.key_triggered_button("Move left", ["ArrowLeft"], () => {
+            if(this.person_move <= 14){
+            this.person_move += 2;
+            }
+            ; this.person_left = true})
+        this.key_triggered_button("Move right", ["ArrowRight"], () => {
+            if(this.person_move >= -30){
+                this.person_move -= 2;
+                } 
+                this.person_right = true;})
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
-        this.key_triggered_button("First Person POV", ["b"], () => {
+        this.key_triggered_button("First Person POV", ["1"], () => {
             this.attach_camera_to_person = !this.attach_camera_to_person;
             if(this.attach_camera_to_cannon){
                 this.attach_camera_to_cannon = false;
             }
         });
-        this.key_triggered_button("Cannon POV", ["c"], () => {
+        this.key_triggered_button("Cannon POV", ["3"], () => {
             this.attach_camera_to_cannon = !this.attach_camera_to_cannon;
             if(this.attach_camera_to_person){
                 this.attach_camera_to_person = false;
