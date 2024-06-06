@@ -22,6 +22,8 @@ const PATHS = {
     brick_wall: "assets/brick-wall.jpeg",
     sand: "assets/sand.png",
     sky: "assets/sky.png",
+    nightsky: "assets/night_sky.jpg",
+    snow: "assets/snow.jpg"
 };
 
 //change what each item is worth here 
@@ -31,6 +33,11 @@ const ITEM_POINTS = {
     pizza: 5, 
 }; 
 
+const bgm1 = new Audio("assets/bgm1.mp3");
+const success = new Audio("assets/success.mp3");
+const error = new Audio("assets/error.mp3");
+let audio = bgm1;
+audio.play().catch((e) => console.log(e));
   
   
 export class TreasureCannon extends Scene {
@@ -49,13 +56,17 @@ export class TreasureCannon extends Scene {
             square: new defs.Square(),
             wall1: new defs.Square(),
             wall2: new defs.Square(),
+            wall1_night: new defs.Square(),
+            wall2_night: new defs.Square(),
             ground: new defs.Square(),
+            ground_night: new defs.Square(),
             pizza: new defs.Triangle(),
             apple: new defs.Subdivision_Sphere(5),
             apple_stem: new defs.Cylindrical_Tube(1, 10, [[0, 2], [0, 1]]),
             bomb: new defs.Subdivision_Sphere(5),
             person: new Person(),
             side_walls: new defs.Square(),
+            side_walls_night: new defs.Square(),
             cloud: new Cloud(),
             tree: new Tree(),
             start_screen: new StartScreen(),
@@ -81,10 +92,18 @@ export class TreasureCannon extends Scene {
             wall_texture: new Material(new defs.Textured_Phong(), {
                 ambient: 1, texture: new Texture(PATHS.sky),
             }),
+            wall_night_texture: new Material(new defs.Textured_Phong(), {
+                ambient: .5, texture: new Texture(PATHS.nightsky),
+            }),
             side_wall_texture: new Material(new defs.Textured_Phong(), {
                 ambient: 1, texture: new Texture(PATHS.sky)}),
+            side_wall_night_texture: new Material(new defs.Textured_Phong(), {
+                ambient: .5, texture: new Texture(PATHS.nightsky)}),
             ground_texture: new Material( new defs.Textured_Phong(), {
                 ambient: 1, texture: new Texture(PATHS.sand),
+            }),
+            ground_night_texture: new Material( new defs.Textured_Phong(), {
+                ambient: 1, texture: new Texture(PATHS.snow),
             }),
             apple_texture: new Material ( new defs.Phong_Shader(), {ambient: 1, color: hex_color("#992828")}),
             apple_stem_texture: new Material ( new defs.Phong_Shader(), {ambient: .9, diffusivity: .8, color: COLORS.green}),
@@ -96,9 +115,11 @@ export class TreasureCannon extends Scene {
         this.person_move = 0;
         this.start_game = false;
         this.projectiles = []; 
-        this.time_interval_between_projectiles = 4; 
+        this.time_interval_between_projectiles = 1; 
         this.last_shot_time = 0; 
         this.points = 0; 
+        this.play_music = true;
+        this.night_bg = false;
         this.initial_camera_location = Mat4.look_at(vec3(0, 30, 0), vec3(0, 0, 0), vec3(0, 0, 1));
     }
 
@@ -130,6 +151,7 @@ export class TreasureCannon extends Scene {
     }
 
     draw_background(context, program_state) {
+        this.night_bg = false
         // WALL
         let wall_transform = Mat4.identity()
         wall_transform = wall_transform
@@ -185,6 +207,66 @@ export class TreasureCannon extends Scene {
         program_state,
         left_side_transform,
         this.materials.side_wall_texture
+        ); 
+    }
+
+    draw_night_background(context, program_state) {
+        this.night_bg = true
+        // WALL
+        let wall_transform = Mat4.identity()
+        wall_transform = wall_transform
+        .times(Mat4.translation(0,-10,5))
+        .times(Mat4.scale(20, 20, 20))
+        .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0))
+       ;
+        // Scale appropriately to cover the screen
+        
+        this.shapes.wall2_night.draw(
+        context,
+        program_state,
+        wall_transform,
+        this.materials.wall_night_texture
+        );
+
+        // GROUND
+        let ground_transform = Mat4.identity();
+        ground_transform = ground_transform
+        .times(Mat4.translation(0, -2, -9))
+        .times(Mat4.rotation((Math.PI) / 2, 1, 0, 0))
+      
+        .times(Mat4.scale(20, 1, 10))
+        .times(Mat4.rotation((3 * Math.PI) / 2, 1, 0, 0));
+        this.shapes.ground_night.draw(
+            context,
+            program_state,
+            ground_transform,
+            this.materials.ground_night_texture
+        );
+
+        // right
+        let side_transform = Mat4.identity();
+
+        let right_side_transform = side_transform
+        .times(Mat4.translation(-20,0, 5))
+        .times(Mat4.scale(20, 20, 20))
+        .times(Mat4.rotation((3 * Math.PI) / 2, 0, 1, 0));
+        this.shapes.side_walls_night.draw(
+        context,
+        program_state,
+        right_side_transform,
+        this.materials.side_wall_night_texture
+        );
+
+        // left
+        let left_side_transform = side_transform
+        .times(Mat4.translation(20,0, 5))
+        .times(Mat4.scale(20, 20, 20))
+        .times(Mat4.rotation((3 * Math.PI) / 2, 0, 1, 0));
+        this.shapes.side_walls_night.draw(
+        context,
+        program_state,
+        left_side_transform,
+        this.materials.side_wall_night_texture
         ); 
     }
 
@@ -271,20 +353,32 @@ export class TreasureCannon extends Scene {
                 else {
                     this.start_game = true
                     this.apple_exists = true
+                    audio.pause();
+                    audio = bgm1;
+                    if (this.play_music === true) {
+                        audio.volume = 0.5;
+                        audio.play().catch((e) => console.log(e));
+                    }
                 }
             }
           );
         this.key_triggered_button("Move left", ["ArrowLeft"], () => {this.person_move += 2})
         this.key_triggered_button("Move right", ["ArrowRight"], () => {this.person_move -= 2})
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
+        this.key_triggered_button("View game", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
-        this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-        this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
+        // this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.apple);
+        // this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
+        this.key_triggered_button("Change background", ["c"], () => {
+            this.night_bg = !this.night_bg
+        })
         this.new_line();
-        this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
-        this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
-        this.new_line();
-        this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+        this.key_triggered_button("Toggle music", ["Control", "m"], () => {
+            audio.pause();
+            this.play_music = !this.play_music;
+            if (this.play_music) {
+                audio.play().catch((e) => console.log(e));
+            }
+        });
     }
 
     display(context, program_state) {
@@ -361,7 +455,12 @@ export class TreasureCannon extends Scene {
 
         let initial_position = vec4(initial_position_transform[0][3], initial_position_transform[1][3], initial_position_transform[2][3], 1);
 
-        this.draw_background(context, program_state);
+        if (this.night_bg) {
+            console.log("K:FJS:")
+            this.draw_night_background(context, program_state)
+        } else {
+            this.draw_background(context, program_state);
+        }
         program_state.lights = [new Light(light_position, color(1,1,1,1), 1000)];
 
         let person_transform = model_transform.times(Mat4.translation(0, 1, 1))
@@ -404,12 +503,18 @@ export class TreasureCannon extends Scene {
                     }
                 ))  {
                     if(projectile.type == "apple"){
+                        let audio = success
+                        audio.play().catch((e) => console.log(e));
                         this.points += ITEM_POINTS.apple
                     }
                     else if(projectile.type == "bomb"){
+                        let audio = error
+                        audio.play().catch((e) => console.log(e));
                         this.points += ITEM_POINTS.bomb
                     }
                     else if(projectile.type == "pizza"){
+                        let audio = success
+                        audio.play().catch((e) => console.log(e));
                         this.points += ITEM_POINTS.pizza
                     }
                     this.projectiles.splice(i, 1);
