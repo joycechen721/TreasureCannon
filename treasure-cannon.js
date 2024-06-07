@@ -73,6 +73,10 @@ export class TreasureCannon extends Scene {
             start_screen: new StartScreen(),
             cylinder: new defs.Capped_Cylinder(20, 20, [[0, 1], [0, 1]]),
             text: new Text_Line(100),
+            projectile1: new Projectile(),
+            projectile2: new Projectile(),
+            projectile3: new Projectile(),
+            projectile4: new Projectile(),
         };
 
         // *** Materials
@@ -403,22 +407,65 @@ export class TreasureCannon extends Scene {
         let launch_angle = theta; 
         //current time
         let launch_time = t; 
+
+
+        let seen_types = [];
+
+for (let i = this.projectiles.length - 1; i >= 0; i--) {
+    let proj = this.projectiles[i];
+    seen_types.push(proj.projectile_type);
+    console.log("projectile_type", proj.projectile_type);
+}
+
+let projectile;
+let proj_type;
+
+if (!seen_types.includes(1)) {
+    projectile = this.shapes.projectile1;
+    proj_type = 1;
+} else if (!seen_types.includes(2)) {
+    projectile = this.shapes.projectile2;
+    proj_type = 2;
+} else if (!seen_types.includes(3)) {
+    projectile = this.shapes.projectile3;
+    proj_type = 3;
+} else if (!seen_types.includes(4)) {
+    projectile = this.shapes.projectile4;
+    proj_type = 4;
+}
+
+// Now you have the projectile shape assigned based on availability of types
+// You can use the 'projectile' variable as needed
+
         
         //randomly choosing which object to fire
         //each item has equal probability to be chosen now, but should be refined so that bombs are rarer than food items and pizza is rarer than apples 
         let id_num = Math.floor(Math.random() * 4) + 1;
+
+        let item_type;
+        
         if(id_num == 1){
-            this.projectiles.push(new Projectile("apple", initial_position, initial_velocity, launch_angle, launch_time));
+            item_type = "apple";
+
+            // this.projectiles.push(new Projectile("apple", initial_position, initial_velocity, launch_angle, launch_time));
         }
         else if(id_num == 2){
-            this.projectiles.push(new Projectile("bomb", initial_position, initial_velocity, launch_angle, launch_time));
+            item_type = "bomb";
+
+            // this.projectiles.push(new Projectile("bomb", initial_position, initial_velocity, launch_angle, launch_time));
         }
         else if(id_num == 3){
-            this.projectiles.push(new Projectile("pizza", initial_position, initial_velocity, launch_angle, launch_time));
+            item_type = "coin";
+          
+            // this.projectiles.push(new Projectile("pizza", initial_position, initial_velocity, launch_angle, launch_time));
         }
         else if (id_num == 4){
-            this.projectiles.push(new Projectile("coin", initial_position, initial_velocity, launch_angle, launch_time));
+            item_type = "pizza";
+           
+            // this.projectiles.push(new Projectile("coin", initial_position, initial_velocity, launch_angle, launch_time));
         } 
+        projectile = projectile.initialize(item_type, initial_position, initial_velocity, launch_angle, launch_time, proj_type);
+        this.projectiles.push(projectile);
     }
 
     check_collision(bounding_box1, bounding_box2) {
@@ -635,7 +682,9 @@ export class TreasureCannon extends Scene {
         }
 
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            // console.log("length",this.projectiles.length);
             let projectile = this.projectiles[i];
+            console.log("projectile",projectile);
             let { x, z } = projectile.update(t);
             let projectile_time = projectile.launch_time;
             //checking if projectile is out of camera view 

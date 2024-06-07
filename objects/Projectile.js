@@ -14,17 +14,18 @@ const COLORS = {
   };
 
 export default class Projectile {
-    constructor(type, initial_position, initial_velocity, theta, launch_time) {
-        this.type = type;
-        this.position = initial_position;
-        this.initial_velocity = initial_velocity;
-        this.theta = theta;
-        this.launch_time = launch_time;
+    constructor() {
+        this.type = "apple";
+        this.position = [0,0,0] ;
+        this.initial_velocity = 0;
+        this.theta= 0;
+        this.launch_time = 0;
         this.gravity = -9.81;
         this.v_x = 0; 
         this.v_y = 0; 
         this.dx = 0; 
         this.dy = 0; 
+        this.projectile_type = "default";
 
         this.shapes = {
             pizza: new defs.Triangle(),
@@ -71,6 +72,21 @@ export default class Projectile {
             this.materials.apple_stem_texture,
             );
             return apple_transform; 
+    }
+
+    initialize(type, initial_position, initial_velocity, theta, launch_time, projectile_type){
+        this.type = type;
+        this.position = initial_position;
+        this.initial_velocity = initial_velocity;
+        this.theta = theta;
+        this.launch_time = launch_time;
+        this.gravity = -9.81;
+        this.v_x = 0; 
+        this.v_y = 0; 
+        this.dx = 0; 
+        this.dy = 0; 
+        this.projectile_type = projectile_type;
+        return this;
     }
 
     draw_bomb(context, program_state){
