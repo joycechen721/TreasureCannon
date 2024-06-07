@@ -29,9 +29,9 @@ const PATHS = {
 //change what each item is worth here 
 const ITEM_POINTS = {
     apple: 3, 
-    bomb: -5, 
+    bomb: -8, 
     pizza: 5, 
-    coin: 8,
+    coin: 5,
 }; 
 
 const bgm1 = new Audio("assets/bgm1.mp3");
@@ -41,6 +41,25 @@ let audio = bgm1;
 audio.play().catch((e) => console.log(e));
   
   
+const OBJECT_PROBABILITIES = {
+    apple: 0.3,  
+    bomb: 0.5,   
+    pizza: 0.15,
+    coin: 0.15,   
+};
+
+const selectObject = (probabilities) => {
+    const rnd = Math.random();
+    let cumulative = 0;
+    for (let key in probabilities) {
+        cumulative += probabilities[key];
+        if (rnd < cumulative) {
+            return key;
+        }
+    }
+    return null; // Fallback, should not happen if probabilities are normalized correctly
+};
+
 export class TreasureCannon extends Scene {
     constructor() {
         super();
@@ -118,6 +137,8 @@ export class TreasureCannon extends Scene {
             pizza_texture: new Material ( new defs.Phong_Shader(), {ambient: .9, color: COLORS.yellow}),
             text: new Material(new defs.Textured_Phong(), {ambient: 1, color: hex_color("#000000"), texture: new Texture('../assets/text.png')}),
             coin: new Material (new defs.Phong_Shader(), {ambient: 1, color: COLORS.yellow}),
+            text2: new Material(new defs.Textured_Phong(), {ambient: 1, color: hex_color("#000000"), texture: new Texture('../assets/text2.png')}),
+            
         }
 
         this.person_move = 0;
@@ -132,6 +153,14 @@ export class TreasureCannon extends Scene {
         this.points = 0; 
         this.play_music = true;
         this.night_bg = false;
+        this.time_interval_between_projectiles = [0, 3, 2.25, 1.5, 1, 0.65]; 
+        this.last_shot_time = 0; 
+        this.points = 0; 
+        this.level = 1; 
+        this.point_thresholds = [0, 10, 15, 20, 25];
+        this.gravitational_acceleration = [0, -9.81, -11.31, -13.81, -15.31, -16.81]; 
+        this.level_up = false; 
+        this.time_of_level_up = 0; 
         this.initial_camera_location = Mat4.look_at(vec3(0, 30, 0), vec3(0, 0, 0), vec3(0, 0, 1));
         this.attach_camera_to_person = false;
         this.attach_camera_to_cannon = false;
@@ -438,34 +467,11 @@ if (!seen_types.includes(1)) {
 // You can use the 'projectile' variable as needed
 
         
-        //randomly choosing which object to fire
-        //each item has equal probability to be chosen now, but should be refined so that bombs are rarer than food items and pizza is rarer than apples 
-        let id_num = Math.floor(Math.random() * 4) + 1;
-
-        let item_type;
-        
-        if(id_num == 1){
-            item_type = "apple";
-
-            // this.projectiles.push(new Projectile("apple", initial_position, initial_velocity, launch_angle, launch_time));
-        }
-        else if(id_num == 2){
-            item_type = "bomb";
-
-            // this.projectiles.push(new Projectile("bomb", initial_position, initial_velocity, launch_angle, launch_time));
-        }
-        else if(id_num == 3){
-            item_type = "coin";
-          
-            // this.projectiles.push(new Projectile("pizza", initial_position, initial_velocity, launch_angle, launch_time));
-        }
-        else if (id_num == 4){
-            item_type = "pizza";
-           
-            // this.projectiles.push(new Projectile("coin", initial_position, initial_velocity, launch_angle, launch_time));
-        } 
-        projectile = projectile.initialize(item_type, initial_position, initial_velocity, launch_angle, launch_time, proj_type);
+        //selects object to fire according to specified probability for each object
+        const objectType = selectObject(OBJECT_PROBABILITIES);
+        projectile = projectile.initialize(objectType, initial_position, initial_velocity, launch_angle, launch_time, proj_type, this.gravitational_acceleration[this.level]);
         this.projectiles.push(projectile);
+        
     }
 
     check_collision(bounding_box1, bounding_box2) {
@@ -507,15 +513,15 @@ if (!seen_types.includes(1)) {
                 this.person_move -= 2;
                 } 
                 this.person_right = true;})
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
+        // this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
-        this.key_triggered_button("First Person POV", ["1"], () => {
+        this.key_triggered_button("First Person POV", ["5"], () => {
             this.attach_camera_to_person = !this.attach_camera_to_person;
             if(this.attach_camera_to_cannon){
                 this.attach_camera_to_cannon = false;
             }
         });
-        this.key_triggered_button("Cannon POV", ["3"], () => {
+        this.key_triggered_button("Cannon POV", ["6"], () => {
             this.attach_camera_to_cannon = !this.attach_camera_to_cannon;
             if(this.attach_camera_to_person){
                 this.attach_camera_to_person = false;
@@ -540,7 +546,6 @@ if (!seen_types.includes(1)) {
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
-        console.log("Display method called");
         if (!context.scratchpad.controls) {
             if (this.start_game) {
                 this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
@@ -672,7 +677,7 @@ if (!seen_types.includes(1)) {
         this.draw_clouds_and_trees (context, program_state, t);
     
 
-        if(this.start_game && (t - this.last_shot_time) >= this.time_interval_between_projectiles){
+        if(this.start_game && (t - this.last_shot_time) >= this.time_interval_between_projectiles[this.level]){
             this.shoot_object(t, theta, initial_position); 
             this.last_shot_time = t; 
         }
@@ -743,6 +748,37 @@ if (!seen_types.includes(1)) {
                 .times(Mat4.rotation(Math.PI, 0, 1, 0))
             this.shapes.text.draw(context, program_state, points_matrix, this.materials.text);
         }
+
+        if(this.level <= 4 && this.points >= this.point_thresholds[this.level]){
+            this.level++; 
+            this.time_of_level_up = t;  
+        }
+        
+        if(this.time_of_level_up != 0 && t - this.time_of_level_up <= 2.0){
+            let level_up_text;
+            const flash_period = 0.25; // seconds
+            const current_material = (Math.floor(t / flash_period) % 2) === 0 ? this.materials.text : this.materials.text2;
+            let level_up_text_matrix;
+            if(this.level < 5){
+                level_up_text = "LEVEL UP!";
+                level_up_text_matrix = model_transform
+                    .times(Mat4.translation(6, 10.1, 6.5))
+                    .times(Mat4.scale(1, 2/3.0, 1))
+                    .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+                    .times(Mat4.rotation(Math.PI, 0, 1, 0))
+            }
+            else{
+                level_up_text = "LEVEL UP! MAX LEVEL"
+                level_up_text_matrix = model_transform
+                    .times(Mat4.translation(13.5, 10.1, 6.5))
+                    .times(Mat4.scale(1, 2/3.0, 1))
+                    .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+                    .times(Mat4.rotation(Math.PI, 0, 1, 0))
+            } 
+            this.shapes.text.set_string(level_up_text, context.context); 
+            this.shapes.text.draw(context, program_state, level_up_text_matrix, current_material);
+        }
+
     }
 }
 

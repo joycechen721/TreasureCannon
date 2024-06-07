@@ -74,13 +74,13 @@ export default class Projectile {
             return apple_transform; 
     }
 
-    initialize(type, initial_position, initial_velocity, theta, launch_time, projectile_type){
+    initialize(type, initial_position, initial_velocity, theta, launch_time, projectile_type, gravity){
         this.type = type;
         this.position = initial_position;
         this.initial_velocity = initial_velocity;
         this.theta = theta;
         this.launch_time = launch_time;
-        this.gravity = -9.81;
+        this.gravity = gravity;
         this.v_x = 0; 
         this.v_y = 0; 
         this.dx = 0; 
